@@ -227,13 +227,94 @@ void main() {
     expect(success, isTrue);
     expect(provider.ownedKos, [created]);
   });
+
+  test('updateKos mengubah kos milik pemilik', () async {
+    const original = Kos(
+      id: 'owned-1',
+      name: 'Kos Lama',
+      addressArea: 'Singaraja',
+      monthlyPrice: 700000,
+      ownerId: 'owner-1',
+    );
+    final provider = KosProvider(
+      repository: _FakeOwnerKosRepository(owned: [original]),
+    );
+    await provider.loadOwnedKos();
+
+    final success = await provider.updateKos(
+      id: 'owned-1',
+      name: 'Kos Baru',
+      addressArea: 'Singaraja',
+      monthlyPrice: 800000,
+      description: 'Dekat kampus',
+      whatsappNumber: '628123456789',
+      status: 'Penuh',
+    );
+
+    expect(success, isTrue);
+    expect(provider.ownedKos.single.name, 'Kos Baru');
+    expect(provider.ownedKos.single.status, 'Penuh');
+  });
+
+  test('updateKos menolak kos milik pemilik lain', () async {
+    final provider = KosProvider(
+      repository: _FakeOwnerKosRepository(
+        updateError: StateError(
+          'Kos tidak ditemukan atau bukan milik pemilik yang login.',
+        ),
+      ),
+    );
+
+    final success = await provider.updateKos(
+      id: 'kos-pemilik-lain',
+      name: 'Kos Baru',
+      addressArea: 'Singaraja',
+      monthlyPrice: 800000,
+      description: 'Dekat kampus',
+      whatsappNumber: '628123456789',
+      status: 'Tersedia',
+    );
+
+    expect(success, isFalse);
+    expect(
+      provider.errorMessage,
+      'Anda tidak memiliki akses untuk mengubah kos ini.',
+    );
+  });
+
+  test('updateKos menampilkan pesan koneksi saat gagal', () async {
+    final provider = KosProvider(
+      repository: _FakeOwnerKosRepository(updateError: Exception('offline')),
+    );
+
+    final success = await provider.updateKos(
+      id: 'owned-1',
+      name: 'Kos Baru',
+      addressArea: 'Singaraja',
+      monthlyPrice: 800000,
+      description: 'Dekat kampus',
+      whatsappNumber: '628123456789',
+      status: 'Tersedia',
+    );
+
+    expect(success, isFalse);
+    expect(
+      provider.errorMessage,
+      'Tidak dapat mengubah kos. Periksa koneksi internet.',
+    );
+  });
 }
 
 class _FakeOwnerKosRepository implements KosRepository, OwnerKosRepository {
-  _FakeOwnerKosRepository({this.owned = const [], this.created});
+  _FakeOwnerKosRepository({
+    this.owned = const [],
+    this.created,
+    this.updateError,
+  });
 
   final List<Kos> owned;
   final Kos? created;
+  final Object? updateError;
 
   @override
   Future<List<Kos>> fetchKosTerbaru() async => owned;
@@ -268,6 +349,31 @@ class _FakeOwnerKosRepository implements KosRepository, OwnerKosRepository {
           status: status,
           ownerId: 'owner-1',
         );
+  }
+
+  @override
+  Future<Kos> updateKos({
+    required String id,
+    required String name,
+    required String addressArea,
+    required num monthlyPrice,
+    required String description,
+    required String whatsappNumber,
+    required String status,
+  }) async {
+    if (updateError != null) {
+      throw updateError!;
+    }
+    return Kos(
+      id: id,
+      name: name,
+      addressArea: addressArea,
+      monthlyPrice: monthlyPrice,
+      description: description,
+      whatsappNumber: whatsappNumber,
+      status: status,
+      ownerId: 'owner-1',
+    );
   }
 }
 

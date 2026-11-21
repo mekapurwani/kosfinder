@@ -2,10 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
+import '../models/kos.dart';
 import '../providers/kos_provider.dart';
 
 class KosFormScreen extends StatefulWidget {
-  const KosFormScreen({super.key});
+  const KosFormScreen({super.key, this.kos});
+
+  final Kos? kos;
 
   @override
   State<KosFormScreen> createState() => _KosFormScreenState();
@@ -19,6 +22,22 @@ class _KosFormScreenState extends State<KosFormScreen> {
   final _descriptionController = TextEditingController();
   final _whatsappController = TextEditingController();
   String _status = 'Tersedia';
+
+  bool get _isEdit => widget.kos != null;
+
+  @override
+  void initState() {
+    super.initState();
+    final kos = widget.kos;
+    if (kos != null) {
+      _nameController.text = kos.name;
+      _addressController.text = kos.addressArea;
+      _priceController.text = kos.monthlyPrice.toStringAsFixed(0);
+      _descriptionController.text = kos.description;
+      _whatsappController.text = kos.whatsappNumber;
+      _status = kos.status;
+    }
+  }
 
   @override
   void dispose() {
@@ -44,14 +63,24 @@ class _KosFormScreenState extends State<KosFormScreen> {
     }
 
     final provider = context.read<KosProvider>();
-    final success = await provider.createKos(
-      name: _nameController.text.trim(),
-      addressArea: _addressController.text.trim(),
-      monthlyPrice: price,
-      description: _descriptionController.text.trim(),
-      whatsappNumber: _whatsappController.text.trim(),
-      status: _status,
-    );
+    final success = _isEdit
+        ? await provider.updateKos(
+            id: widget.kos!.id,
+            name: _nameController.text.trim(),
+            addressArea: _addressController.text.trim(),
+            monthlyPrice: price,
+            description: _descriptionController.text.trim(),
+            whatsappNumber: _whatsappController.text.trim(),
+            status: _status,
+          )
+        : await provider.createKos(
+            name: _nameController.text.trim(),
+            addressArea: _addressController.text.trim(),
+            monthlyPrice: price,
+            description: _descriptionController.text.trim(),
+            whatsappNumber: _whatsappController.text.trim(),
+            status: _status,
+          );
 
     if (!mounted) {
       return;
@@ -70,7 +99,7 @@ class _KosFormScreenState extends State<KosFormScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Tambah Kos')),
+      appBar: AppBar(title: Text(_isEdit ? 'Ubah Kos' : 'Tambah Kos')),
       body: Consumer<KosProvider>(
         builder: (context, provider, _) {
           return SingleChildScrollView(
@@ -174,7 +203,7 @@ class _KosFormScreenState extends State<KosFormScreen> {
                             height: 20,
                             child: CircularProgressIndicator(strokeWidth: 2),
                           )
-                        : const Text('Simpan Kos'),
+                        : Text(_isEdit ? 'Simpan Perubahan' : 'Simpan Kos'),
                   ),
                 ],
               ),

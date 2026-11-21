@@ -44,6 +44,28 @@ class _FakeOwnerKosRepository implements KosRepository, OwnerKosRepository {
       ownerId: 'owner-1',
     );
   }
+
+  @override
+  Future<Kos> updateKos({
+    required String id,
+    required String name,
+    required String addressArea,
+    required num monthlyPrice,
+    required String description,
+    required String whatsappNumber,
+    required String status,
+  }) async {
+    return Kos(
+      id: id,
+      name: name,
+      addressArea: addressArea,
+      monthlyPrice: monthlyPrice,
+      description: description,
+      whatsappNumber: whatsappNumber,
+      status: status,
+      ownerId: 'owner-1',
+    );
+  }
 }
 
 void main() {
@@ -124,5 +146,39 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Buka Kos Saya'), findsOneWidget);
+  });
+
+  testWidgets('tombol edit membuka form terisi data kos', (tester) async {
+    const owned = [
+      Kos(
+        id: 'owned-1',
+        name: 'Kos Mawar',
+        addressArea: 'Singaraja',
+        monthlyPrice: 800000,
+        description: 'Dekat kampus',
+        whatsappNumber: '628123456789',
+        status: 'Penuh',
+        ownerId: 'owner-1',
+      ),
+    ];
+    final provider = KosProvider(repository: _FakeOwnerKosRepository(owned));
+
+    await tester.pumpWidget(
+      ChangeNotifierProvider.value(
+        value: provider,
+        child: const MaterialApp(home: OwnerKosListScreen()),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('edit-kos-owned-1')), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('edit-kos-owned-1')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Ubah Kos'), findsOneWidget);
+    expect(find.text('Kos Mawar'), findsOneWidget);
+    expect(find.text('Singaraja'), findsOneWidget);
+    expect(find.text('Penuh'), findsOneWidget);
   });
 }

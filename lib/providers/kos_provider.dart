@@ -78,6 +78,49 @@ class KosProvider extends ChangeNotifier {
     }
   }
 
+  Future<bool> updateKos({
+    required String id,
+    required String name,
+    required String addressArea,
+    required num monthlyPrice,
+    required String description,
+    required String whatsappNumber,
+    required String status,
+  }) async {
+    _isLoading = true;
+    _errorMessage = null;
+    notifyListeners();
+
+    try {
+      final updatedKos = await _ownerRepository.updateKos(
+        id: id,
+        name: name,
+        addressArea: addressArea,
+        monthlyPrice: monthlyPrice,
+        description: description,
+        whatsappNumber: whatsappNumber,
+        status: status,
+      );
+      _ownedKos = _ownedKos
+          .map((kos) => kos.id == id ? updatedKos : kos)
+          .toList();
+      _selectedKos = updatedKos;
+      return true;
+    } catch (error, stackTrace) {
+      debugPrint('Gagal mengubah kos: $error');
+      debugPrintStack(label: 'Stack trace ubah kos', stackTrace: stackTrace);
+      if (error is StateError && error.toString().contains('bukan milik')) {
+        _errorMessage = 'Anda tidak memiliki akses untuk mengubah kos ini.';
+      } else {
+        _errorMessage = 'Tidak dapat mengubah kos. Periksa koneksi internet.';
+      }
+      return false;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
   Future<void> loadKos() async {
     _isLoading = true;
     _errorMessage = null;

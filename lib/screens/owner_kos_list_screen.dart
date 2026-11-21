@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../models/kos.dart';
 import '../providers/kos_provider.dart';
 import 'kos_form_screen.dart';
 
@@ -34,6 +35,14 @@ class _OwnerKosListScreenState extends State<OwnerKosListScreen> {
   Future<void> _openForm() async {
     await Navigator.of(context)
         .push(MaterialPageRoute<void>(builder: (_) => const KosFormScreen()));
+    if (mounted) {
+      await context.read<KosProvider>().loadOwnedKos();
+    }
+  }
+
+  Future<void> _openEditForm(Kos kos) async {
+    await Navigator.of(context)
+        .push(MaterialPageRoute<void>(builder: (_) => KosFormScreen(kos: kos)));
     if (mounted) {
       await context.read<KosProvider>().loadOwnedKos();
     }
@@ -94,7 +103,19 @@ class _OwnerKosListScreenState extends State<OwnerKosListScreen> {
                       '${kos.addressArea}\n'
                       'Rp${kos.monthlyPrice.toStringAsFixed(0)} / bulan',
                     ),
-                    trailing: Text(kos.status),
+                    trailing: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(kos.status),
+                        const SizedBox(width: 8),
+                        IconButton(
+                          key: Key('edit-kos-${kos.id}'),
+                          tooltip: 'Edit Kos',
+                          onPressed: () => _openEditForm(kos),
+                          icon: const Icon(Icons.edit),
+                        ),
+                      ],
+                    ),
                   ),
                 );
               },
