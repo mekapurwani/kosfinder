@@ -4,7 +4,7 @@ import '../models/kos.dart';
 
 abstract class KosRepository {
   Future<List<Kos>> fetchKosTerbaru();
-  Future<List<Kos>> searchKosTerbaru(String query);
+  Future<List<Kos>> searchKosTerbaru(String query, {num? maxPrice});
   Future<Kos?> fetchKosById(String id);
 }
 
@@ -29,10 +29,22 @@ class SupabaseKosRepository implements KosRepository {
   }
 
   @override
-  Future<List<Kos>> searchKosTerbaru(String query) async {
+  Future<List<Kos>> searchKosTerbaru(String query, {num? maxPrice}) async {
     final trimmedQuery = query.trim();
     if (trimmedQuery.isEmpty) {
-      return fetchKosTerbaru();
+      var queryBuilder = client
+          .from('kos')
+          .select(
+            'id, name, address_area, monthly_price, '
+            'description, whatsapp_number, status',
+          );
+      if (maxPrice != null) {
+        queryBuilder = queryBuilder.lte('monthly_price', maxPrice);
+      }
+      final rows = await queryBuilder.order('created_at', ascending: false);
+      return rows
+          .map((row) => Kos.fromMap(Map<String, dynamic>.from(row)))
+          .toList();
     }
 
     final escapedQuery = trimmedQuery
@@ -40,7 +52,7 @@ class SupabaseKosRepository implements KosRepository {
         .replaceAll('_', '\\_')
         .replaceAll(',', '')
         .replaceAll('.', '');
-    final rows = await client
+    var queryBuilder = client
         .from('kos')
         .select(
           'id, name, address_area, monthly_price, '
@@ -49,8 +61,11 @@ class SupabaseKosRepository implements KosRepository {
         .or(
           'name.ilike.%$escapedQuery%,'
           'address_area.ilike.%$escapedQuery%',
-        )
-        .order('created_at', ascending: false);
+        );
+    if (maxPrice != null) {
+      queryBuilder = queryBuilder.lte('monthly_price', maxPrice);
+    }
+    final rows = await queryBuilder.order('created_at', ascending: false);
 
     return rows
         .map((row) => Kos.fromMap(Map<String, dynamic>.from(row)))
@@ -84,7 +99,7 @@ class MissingSupabaseKosRepository implements KosRepository {
   }
 
   @override
-  Future<List<Kos>> searchKosTerbaru(String query) async {
+  Future<List<Kos>> searchKosTerbaru(String query, {num? maxPrice}) async {
     throw StateError('Konfigurasi Supabase belum tersedia.');
   }
 

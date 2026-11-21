@@ -15,11 +15,28 @@ class KosListScreen extends StatefulWidget {
 
 class _KosListScreenState extends State<KosListScreen> {
   final TextEditingController _searchController = TextEditingController();
+  final TextEditingController _maxPriceController = TextEditingController();
 
   @override
   void dispose() {
     _searchController.dispose();
+    _maxPriceController.dispose();
     super.dispose();
+  }
+
+  num? get _maxPrice {
+    final text = _maxPriceController.text.trim();
+    if (text.isEmpty) {
+      return null;
+    }
+    return num.tryParse(text);
+  }
+
+  void _applyFilters() {
+    context.read<KosProvider>().searchKos(
+      _searchController.text,
+      maxPrice: _maxPrice,
+    );
   }
 
   @override
@@ -45,25 +62,49 @@ class _KosListScreenState extends State<KosListScreen> {
               children: [
                 Padding(
                   padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-                  child: TextField(
-                    controller: _searchController,
-                    textInputAction: TextInputAction.search,
-                    decoration: InputDecoration(
-                      hintText: 'Cari nama atau lokasi/area',
-                      prefixIcon: const Icon(Icons.search),
-                      border: const OutlineInputBorder(),
-                      suffixIcon: IconButton(
-                        tooltip: 'Hapus pencarian',
-                        onPressed: () {
-                          _searchController.clear();
-                          context.read<KosProvider>().searchKos('');
-                        },
-                        icon: const Icon(Icons.clear),
+                  child: Column(
+                    children: [
+                      TextField(
+                        key: const Key('search-field'),
+                        controller: _searchController,
+                        textInputAction: TextInputAction.search,
+                        decoration: InputDecoration(
+                          hintText: 'Cari nama atau lokasi/area',
+                          prefixIcon: const Icon(Icons.search),
+                          border: const OutlineInputBorder(),
+                          suffixIcon: IconButton(
+                            tooltip: 'Hapus pencarian',
+                            onPressed: () {
+                              _searchController.clear();
+                              _applyFilters();
+                            },
+                            icon: const Icon(Icons.clear),
+                          ),
+                        ),
+                        onSubmitted: (_) => _applyFilters(),
                       ),
-                    ),
-                    onSubmitted: (query) {
-                      context.read<KosProvider>().searchKos(query);
-                    },
+                      const SizedBox(height: 8),
+                      TextField(
+                        key: const Key('max-price-field'),
+                        controller: _maxPriceController,
+                        keyboardType: TextInputType.number,
+                        textInputAction: TextInputAction.search,
+                        decoration: InputDecoration(
+                          hintText: 'Harga maksimum',
+                          prefixIcon: const Icon(Icons.payments_outlined),
+                          border: const OutlineInputBorder(),
+                          suffixIcon: IconButton(
+                            tooltip: 'Hapus harga maksimum',
+                            onPressed: () {
+                              _maxPriceController.clear();
+                              _applyFilters();
+                            },
+                            icon: const Icon(Icons.clear),
+                          ),
+                        ),
+                        onSubmitted: (_) => _applyFilters(),
+                      ),
+                    ],
                   ),
                 ),
                 Expanded(

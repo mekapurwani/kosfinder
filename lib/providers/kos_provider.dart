@@ -39,13 +39,13 @@ class KosProvider extends ChangeNotifier {
     }
   }
 
-  Future<void> searchKos(String query) async {
+  Future<void> searchKos(String query, {num? maxPrice}) async {
     _isLoading = true;
     _errorMessage = null;
     notifyListeners();
 
     try {
-      _kos = await repository.searchKosTerbaru(query);
+      _kos = await repository.searchKosTerbaru(query, maxPrice: maxPrice);
     } catch (error, stackTrace) {
       debugPrint('Gagal mencari kos: $error');
       debugPrintStack(

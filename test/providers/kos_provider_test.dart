@@ -10,6 +10,7 @@ class _FakeKosRepository implements KosRepository {
   final List<Kos>? searchResult;
   final Object? error;
   String? lastSearchQuery;
+  num? lastMaxPrice;
 
   @override
   Future<List<Kos>> fetchKosTerbaru() async {
@@ -20,8 +21,9 @@ class _FakeKosRepository implements KosRepository {
   }
 
   @override
-  Future<List<Kos>> searchKosTerbaru(String query) async {
+  Future<List<Kos>> searchKosTerbaru(String query, {num? maxPrice}) async {
     lastSearchQuery = query;
+    lastMaxPrice = maxPrice;
     if (error != null) {
       throw error!;
     }
@@ -96,6 +98,47 @@ void main() {
     expect(provider.errorMessage, isNull);
   });
 
+  test('searchKos meneruskan harga maksimum', () async {
+    const matches = [
+      Kos(
+        id: '4',
+        name: 'Kos Anggrek',
+        addressArea: 'Singaraja',
+        monthlyPrice: 700000,
+      ),
+    ];
+    final repository = _FakeKosRepository(searchResult: matches);
+    final provider = KosProvider(repository: repository);
+
+    await provider.searchKos('singaraja', maxPrice: 800000);
+
+    expect(repository.lastSearchQuery, 'singaraja');
+    expect(repository.lastMaxPrice, 800000);
+    expect(provider.kos, matches);
+  });
+
+  test('searchKos menyaring kos di atas harga maksimum', () async {
+    const kos = [
+      Kos(
+        id: '1',
+        name: 'Kos Murah',
+        addressArea: 'Singaraja',
+        monthlyPrice: 700000,
+      ),
+      Kos(
+        id: '2',
+        name: 'Kos Mahal',
+        addressArea: 'Singaraja',
+        monthlyPrice: 900000,
+      ),
+    ];
+    final provider = KosProvider(repository: _FakeFilteredKosRepository(kos));
+
+    await provider.searchKos('', maxPrice: 800000);
+
+    expect(provider.kos, [kos.first]);
+  });
+
   test('loadKos menampilkan pesan ramah saat koneksi gagal', () async {
     final provider = KosProvider(
       repository: _FakeKosRepository(error: Exception('offline')),
@@ -147,8 +190,32 @@ class _DetailKosRepository implements KosRepository {
   Future<List<Kos>> fetchKosTerbaru() async => [];
 
   @override
-  Future<List<Kos>> searchKosTerbaru(String query) async => [];
+  Future<List<Kos>> searchKosTerbaru(String query, {num? maxPrice}) async => [];
 
   @override
   Future<Kos?> fetchKosById(String id) async => detail;
+}
+
+class _FakeFilteredKosRepository implements KosRepository {
+  _FakeFilteredKosRepository(this.kos);
+
+  final List<Kos> kos;
+
+  @override
+  Future<List<Kos>> fetchKosTerbaru() async => kos;
+
+  @override
+  Future<List<Kos>> searchKosTerbaru(String query, {num? maxPrice}) async {
+    return kos.where((item) {
+      final matchesQuery =
+          query.trim().isEmpty ||
+          item.name.toLowerCase().contains(query.trim().toLowerCase()) ||
+          item.addressArea.toLowerCase().contains(query.trim().toLowerCase());
+      final matchesPrice = maxPrice == null || item.monthlyPrice <= maxPrice;
+      return matchesQuery && matchesPrice;
+    }).toList();
+  }
+
+  @override
+  Future<Kos?> fetchKosById(String id) async => null;
 }

@@ -15,14 +15,15 @@ class _FakeKosRepository implements KosRepository {
   Future<List<Kos>> fetchKosTerbaru() async => kos;
 
   @override
-  Future<List<Kos>> searchKosTerbaru(String query) async {
+  Future<List<Kos>> searchKosTerbaru(String query, {num? maxPrice}) async {
     final normalizedQuery = query.toLowerCase();
-    if (normalizedQuery.isEmpty) {
-      return kos;
-    }
     return kos.where((item) {
-      return item.name.toLowerCase().contains(normalizedQuery) ||
+      final matchesQuery =
+          normalizedQuery.isEmpty ||
+          item.name.toLowerCase().contains(normalizedQuery) ||
           item.addressArea.toLowerCase().contains(normalizedQuery);
+      final matchesPrice = maxPrice == null || item.monthlyPrice <= maxPrice;
+      return matchesQuery && matchesPrice;
     }).toList();
   }
 
@@ -116,7 +117,7 @@ void main() {
     await tester.pumpWidget(buildScreen(kos));
     await tester.pumpAndSettle();
 
-    await tester.enterText(find.byType(TextField), 'mawar');
+    await tester.enterText(find.byKey(const Key('search-field')), 'mawar');
     await tester.testTextInput.receiveAction(TextInputAction.search);
     await tester.pumpAndSettle();
 
@@ -139,10 +140,72 @@ void main() {
     await tester.pumpWidget(buildScreen(kos));
     await tester.pumpAndSettle();
 
-    await tester.enterText(find.byType(TextField), 'tidak ada');
+    await tester.enterText(find.byKey(const Key('search-field')), 'tidak ada');
     await tester.testTextInput.receiveAction(TextInputAction.search);
     await tester.pumpAndSettle();
 
     expect(find.text('Kos tidak ditemukan'), findsOneWidget);
+  });
+
+  testWidgets('filter harga menyembunyikan kos di atas batas', (tester) async {
+    const kos = [
+      Kos(
+        id: '1',
+        name: 'Kos Murah',
+        addressArea: 'Singaraja',
+        monthlyPrice: 700000,
+      ),
+      Kos(
+        id: '2',
+        name: 'Kos Mahal',
+        addressArea: 'Singaraja',
+        monthlyPrice: 900000,
+      ),
+    ];
+
+    await tester.pumpWidget(buildScreen(kos));
+    await tester.pumpAndSettle();
+
+    await tester.enterText(find.byKey(const Key('max-price-field')), '800000');
+    await tester.testTextInput.receiveAction(TextInputAction.search);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Kos Murah'), findsOneWidget);
+    expect(find.text('Kos Mahal'), findsNothing);
+  });
+
+  testWidgets('pencarian dan harga maksimum digabungkan', (tester) async {
+    const kos = [
+      Kos(
+        id: '1',
+        name: 'Kos Mawar Murah',
+        addressArea: 'Singaraja',
+        monthlyPrice: 700000,
+      ),
+      Kos(
+        id: '2',
+        name: 'Kos Mawar Mahal',
+        addressArea: 'Singaraja',
+        monthlyPrice: 900000,
+      ),
+      Kos(
+        id: '3',
+        name: 'Kos Melati Murah',
+        addressArea: 'Singaraja',
+        monthlyPrice: 600000,
+      ),
+    ];
+
+    await tester.pumpWidget(buildScreen(kos));
+    await tester.pumpAndSettle();
+
+    await tester.enterText(find.byKey(const Key('search-field')), 'mawar');
+    await tester.enterText(find.byKey(const Key('max-price-field')), '800000');
+    await tester.testTextInput.receiveAction(TextInputAction.search);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Kos Mawar Murah'), findsOneWidget);
+    expect(find.text('Kos Mawar Mahal'), findsNothing);
+    expect(find.text('Kos Melati Murah'), findsNothing);
   });
 }
