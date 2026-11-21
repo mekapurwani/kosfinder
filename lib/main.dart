@@ -56,8 +56,46 @@ class MyApp extends StatelessWidget {
         title: 'KosFinder',
         debugShowCheckedModeBanner: false,
         theme: ThemeData(
-          colorScheme: ColorScheme.fromSeed(seedColor: Colors.indigo),
+          colorScheme: ColorScheme.fromSeed(
+            seedColor: Colors.indigo,
+            primary: Colors.indigo,
+            secondary: Colors.teal,
+          ),
           useMaterial3: true,
+          scaffoldBackgroundColor: const Color(0xFFF7F9FC),
+          appBarTheme: const AppBarTheme(
+            backgroundColor: Colors.indigo,
+            foregroundColor: Colors.white,
+            centerTitle: false,
+            elevation: 0,
+          ),
+          cardTheme: CardThemeData(
+            elevation: 2,
+            shadowColor: Colors.indigo.withValues(alpha: 0.12),
+            color: Colors.white,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+          ),
+          inputDecorationTheme: InputDecorationTheme(
+            filled: true,
+            fillColor: Colors.white,
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(
+                color: Colors.indigo.withValues(alpha: 0.20),
+              ),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: Colors.teal, width: 1.5),
+            ),
+          ),
+          floatingActionButtonTheme: const FloatingActionButtonThemeData(
+            backgroundColor: Colors.teal,
+            foregroundColor: Colors.white,
+          ),
         ),
         routes: {
           '/register': (_) => const RegisterScreen(),

@@ -153,8 +153,29 @@ class _OwnerKosListScreenState extends State<OwnerKosListScreen> {
               itemBuilder: (context, index) {
                 final kos = provider.ownedKos[index];
                 return Card(
+                  elevation: 2,
+                  shadowColor: Colors.indigo.withValues(alpha: 0.12),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
                   child: ListTile(
                     key: Key('owned-kos-${kos.id}'),
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 10,
+                    ),
+                    leading: Container(
+                      width: 44,
+                      height: 44,
+                      decoration: BoxDecoration(
+                        color: Colors.teal.withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Icon(
+                        Icons.apartment_outlined,
+                        color: Colors.teal,
+                      ),
+                    ),
                     title: Text(kos.name),
                     subtitle: Text(
                       '${kos.addressArea}\n'
