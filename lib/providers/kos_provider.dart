@@ -39,6 +39,27 @@ class KosProvider extends ChangeNotifier {
     }
   }
 
+  Future<void> searchKos(String query) async {
+    _isLoading = true;
+    _errorMessage = null;
+    notifyListeners();
+
+    try {
+      _kos = await repository.searchKosTerbaru(query);
+    } catch (error, stackTrace) {
+      debugPrint('Gagal mencari kos: $error');
+      debugPrintStack(
+        label: 'Stack trace pencarian kos',
+        stackTrace: stackTrace,
+      );
+      _errorMessage =
+          'Tidak dapat memuat daftar kos. Periksa koneksi internet.';
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
   Future<void> loadKosById(String id) async {
     _isLoading = true;
     _errorMessage = null;

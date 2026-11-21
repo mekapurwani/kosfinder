@@ -4,10 +4,12 @@ import 'package:kosfinder/providers/kos_provider.dart';
 import 'package:kosfinder/repositories/kos_repository.dart';
 
 class _FakeKosRepository implements KosRepository {
-  _FakeKosRepository({this.result, this.error});
+  _FakeKosRepository({this.result, this.searchResult, this.error});
 
   final List<Kos>? result;
+  final List<Kos>? searchResult;
   final Object? error;
+  String? lastSearchQuery;
 
   @override
   Future<List<Kos>> fetchKosTerbaru() async {
@@ -15,6 +17,15 @@ class _FakeKosRepository implements KosRepository {
       throw error!;
     }
     return result ?? [];
+  }
+
+  @override
+  Future<List<Kos>> searchKosTerbaru(String query) async {
+    lastSearchQuery = query;
+    if (error != null) {
+      throw error!;
+    }
+    return searchResult ?? [];
   }
 
   @override
@@ -50,6 +61,36 @@ void main() {
     final provider = KosProvider(repository: _FakeKosRepository(result: []));
 
     await provider.loadKos();
+
+    expect(provider.kos, isEmpty);
+    expect(provider.errorMessage, isNull);
+  });
+
+  test('searchKos meneruskan kata pencarian dan menyimpan hasil', () async {
+    const matches = [
+      Kos(
+        id: '3',
+        name: 'Kos Mawar',
+        addressArea: 'Singaraja',
+        monthlyPrice: 800000,
+      ),
+    ];
+    final repository = _FakeKosRepository(searchResult: matches);
+    final provider = KosProvider(repository: repository);
+
+    await provider.searchKos('mawar');
+
+    expect(repository.lastSearchQuery, 'mawar');
+    expect(provider.kos, matches);
+    expect(provider.errorMessage, isNull);
+  });
+
+  test('searchKos menandai hasil pencarian kosong', () async {
+    final provider = KosProvider(
+      repository: _FakeKosRepository(searchResult: []),
+    );
+
+    await provider.searchKos('tidak ada');
 
     expect(provider.kos, isEmpty);
     expect(provider.errorMessage, isNull);
@@ -104,6 +145,9 @@ class _DetailKosRepository implements KosRepository {
 
   @override
   Future<List<Kos>> fetchKosTerbaru() async => [];
+
+  @override
+  Future<List<Kos>> searchKosTerbaru(String query) async => [];
 
   @override
   Future<Kos?> fetchKosById(String id) async => detail;

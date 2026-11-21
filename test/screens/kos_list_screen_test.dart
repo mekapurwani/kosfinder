@@ -15,6 +15,18 @@ class _FakeKosRepository implements KosRepository {
   Future<List<Kos>> fetchKosTerbaru() async => kos;
 
   @override
+  Future<List<Kos>> searchKosTerbaru(String query) async {
+    final normalizedQuery = query.toLowerCase();
+    if (normalizedQuery.isEmpty) {
+      return kos;
+    }
+    return kos.where((item) {
+      return item.name.toLowerCase().contains(normalizedQuery) ||
+          item.addressArea.toLowerCase().contains(normalizedQuery);
+    }).toList();
+  }
+
+  @override
   Future<Kos?> fetchKosById(String id) async => null;
 }
 
@@ -83,5 +95,54 @@ void main() {
     expect(find.text('Kos Detail'), findsOneWidget);
     expect(find.text('Singaraja'), findsOneWidget);
     expect(find.text('Hubungi Pemilik'), findsOneWidget);
+  });
+
+  testWidgets('pencarian nama menampilkan hasil yang cocok', (tester) async {
+    const kos = [
+      Kos(
+        id: '1',
+        name: 'Kos Mawar',
+        addressArea: 'Singaraja',
+        monthlyPrice: 800000,
+      ),
+      Kos(
+        id: '2',
+        name: 'Kos Melati',
+        addressArea: 'Singaraja',
+        monthlyPrice: 900000,
+      ),
+    ];
+
+    await tester.pumpWidget(buildScreen(kos));
+    await tester.pumpAndSettle();
+
+    await tester.enterText(find.byType(TextField), 'mawar');
+    await tester.testTextInput.receiveAction(TextInputAction.search);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Kos Mawar'), findsOneWidget);
+    expect(find.text('Kos Melati'), findsNothing);
+  });
+
+  testWidgets('pencarian kosong menampilkan Kos tidak ditemukan', (
+    tester,
+  ) async {
+    const kos = [
+      Kos(
+        id: '1',
+        name: 'Kos Mawar',
+        addressArea: 'Singaraja',
+        monthlyPrice: 800000,
+      ),
+    ];
+
+    await tester.pumpWidget(buildScreen(kos));
+    await tester.pumpAndSettle();
+
+    await tester.enterText(find.byType(TextField), 'tidak ada');
+    await tester.testTextInput.receiveAction(TextInputAction.search);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Kos tidak ditemukan'), findsOneWidget);
   });
 }
