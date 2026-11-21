@@ -16,6 +16,9 @@ class _FakeKosRepository implements KosRepository {
     }
     return result ?? [];
   }
+
+  @override
+  Future<Kos?> fetchKosById(String id) async => null;
 }
 
 void main() {
@@ -65,4 +68,43 @@ void main() {
       'Tidak dapat memuat daftar kos. Periksa koneksi internet.',
     );
   });
+
+  test('loadKosById menyimpan kos yang dipilih', () async {
+    const selected = Kos(
+      id: 'detail-1',
+      name: 'Kos Detail',
+      addressArea: 'Singaraja',
+      monthlyPrice: 850000,
+      description: 'Dekat kampus',
+      whatsappNumber: '628123456789',
+      status: 'Penuh',
+    );
+    final provider = KosProvider(repository: _DetailKosRepository(selected));
+
+    await provider.loadKosById('detail-1');
+
+    expect(provider.selectedKos, selected);
+    expect(provider.errorMessage, isNull);
+  });
+
+  test('loadKosById menandai kos yang tidak ditemukan', () async {
+    final provider = KosProvider(repository: _DetailKosRepository(null));
+
+    await provider.loadKosById('missing');
+
+    expect(provider.selectedKos, isNull);
+    expect(provider.errorMessage, 'Kos tidak ditemukan.');
+  });
+}
+
+class _DetailKosRepository implements KosRepository {
+  _DetailKosRepository(this.detail);
+
+  final Kos? detail;
+
+  @override
+  Future<List<Kos>> fetchKosTerbaru() async => [];
+
+  @override
+  Future<Kos?> fetchKosById(String id) async => detail;
 }

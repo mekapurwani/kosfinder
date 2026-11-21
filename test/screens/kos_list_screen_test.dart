@@ -13,6 +13,9 @@ class _FakeKosRepository implements KosRepository {
 
   @override
   Future<List<Kos>> fetchKosTerbaru() async => kos;
+
+  @override
+  Future<Kos?> fetchKosById(String id) async => null;
 }
 
 void main() {
@@ -57,5 +60,28 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Kos tidak ditemukan'), findsOneWidget);
+  });
+
+  testWidgets('ketika kos ditekan membuka halaman detail', (tester) async {
+    const kos = Kos(
+      id: '1',
+      name: 'Kos Detail',
+      addressArea: 'Singaraja',
+      monthlyPrice: 850000,
+      description: 'Dekat kampus',
+      whatsappNumber: '628123456789',
+      status: 'Tersedia',
+    );
+
+    await tester.pumpWidget(buildScreen(const [kos]));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Kos Detail'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Detail Kos'), findsOneWidget);
+    expect(find.text('Kos Detail'), findsOneWidget);
+    expect(find.text('Singaraja'), findsOneWidget);
+    expect(find.text('Hubungi Pemilik'), findsOneWidget);
   });
 }

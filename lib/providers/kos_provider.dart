@@ -9,12 +9,14 @@ class KosProvider extends ChangeNotifier {
   final KosRepository repository;
 
   List<Kos> _kos = [];
+  Kos? _selectedKos;
   bool _isLoading = false;
   String? _errorMessage;
 
   List<Kos> get kos => List.unmodifiable(_kos);
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
+  Kos? get selectedKos => _selectedKos;
 
   Future<void> loadKos() async {
     _isLoading = true;
@@ -31,6 +33,31 @@ class KosProvider extends ChangeNotifier {
       );
       _errorMessage =
           'Tidak dapat memuat daftar kos. Periksa koneksi internet.';
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<void> loadKosById(String id) async {
+    _isLoading = true;
+    _errorMessage = null;
+    _selectedKos = null;
+    notifyListeners();
+
+    try {
+      _selectedKos = await repository.fetchKosById(id);
+      if (_selectedKos == null) {
+        _errorMessage = 'Kos tidak ditemukan.';
+      }
+    } catch (error, stackTrace) {
+      debugPrint('Gagal mengambil detail kos: $error');
+      debugPrintStack(
+        label: 'Stack trace pengambilan detail kos',
+        stackTrace: stackTrace,
+      );
+      _errorMessage =
+          'Tidak dapat memuat detail kos. Periksa koneksi internet.';
     } finally {
       _isLoading = false;
       notifyListeners();

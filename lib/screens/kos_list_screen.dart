@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../providers/kos_provider.dart';
+import 'kos_detail_screen.dart';
 
 class KosListScreen extends StatefulWidget {
   const KosListScreen({super.key, this.configurationError});
@@ -61,6 +62,13 @@ class _KosListScreenState extends State<KosListScreen> {
                             '${kos.addressArea}\n'
                             'Rp${kos.monthlyPrice.toStringAsFixed(0)} / bulan',
                           ),
+                          onTap: () {
+                            Navigator.of(context).push(
+                              MaterialPageRoute<void>(
+                                builder: (_) => KosDetailScreen(kos: kos),
+                              ),
+                            );
+                          },
                         ),
                       );
                     },
