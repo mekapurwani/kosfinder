@@ -20,6 +20,8 @@ class AuthProvider extends ChangeNotifier {
 
   Future<void> restoreSession() async {
     await repository.restoreSession();
+    _profile = repository.currentProfile;
+    notifyListeners();
   }
 
   Future<bool> login({required String email, required String password}) async {

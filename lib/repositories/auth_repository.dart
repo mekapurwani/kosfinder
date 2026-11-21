@@ -4,6 +4,7 @@ import '../models/profile.dart';
 
 abstract class AuthRepository {
   bool get hasActiveSession;
+  Profile? get currentProfile;
 
   Stream<bool> get sessionChanges;
 
@@ -28,6 +29,21 @@ class SupabaseAuthRepository implements AuthRepository {
 
   @override
   bool get hasActiveSession => client.auth.currentSession != null;
+
+  @override
+  @override
+  Profile? get currentProfile {
+    final user = client.auth.currentUser;
+    if (user == null) {
+      return null;
+    }
+    final metadata = user.userMetadata ?? {};
+    return Profile(
+      id: user.id,
+      name: metadata['name']?.toString() ?? '',
+      role: metadata['role']?.toString() ?? 'pencari_kos',
+    );
+  }
 
   @override
   Stream<bool> get sessionChanges {
@@ -97,6 +113,8 @@ class MissingAuthRepository implements AuthRepository {
 
   @override
   bool get hasActiveSession => false;
+  @override
+  Profile? get currentProfile => null;
 
   @override
   Stream<bool> get sessionChanges => const Stream<bool>.empty();

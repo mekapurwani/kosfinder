@@ -15,6 +15,8 @@ class _FakeAuthRepository implements AuthRepository {
 
   @override
   bool get hasActiveSession => false;
+  @override
+  Profile? get currentProfile => null;
 
   @override
   Stream<bool> get sessionChanges => const Stream<bool>.empty();

@@ -11,6 +11,10 @@ class _FakeAuthRepository implements AuthRepository {
 
   @override
   bool get hasActiveSession => sessionActive;
+  @override
+  Profile? get currentProfile => sessionActive
+      ? const Profile(id: 'fake-user', name: 'Meka', role: 'pemilik_kos')
+      : null;
 
   @override
   Stream<bool> get sessionChanges => _sessionChanges.stream;

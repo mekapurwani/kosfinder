@@ -14,6 +14,8 @@ class _FakeAuthRepository implements AuthRepository {
 
   @override
   bool get hasActiveSession => false;
+  @override
+  Profile? get currentProfile => null;
 
   @override
   Stream<bool> get sessionChanges => const Stream<bool>.empty();
@@ -56,6 +58,7 @@ void main() {
         routes: {
           '/register': (_) => const Scaffold(body: Text('Registrasi')),
           '/home': (_) => const Scaffold(body: Text('Beranda')),
+          '/owner': (_) => const Scaffold(body: Text('Kos Saya')),
         },
         home: const LoginScreen(),
       ),
@@ -84,7 +87,7 @@ void main() {
     await tester.tap(find.byKey(const Key('login-submit')));
     await tester.pumpAndSettle();
 
-    expect(find.text('Beranda'), findsOneWidget);
+    expect(find.text('Kos Saya'), findsOneWidget);
   });
 
   testWidgets('login gagal menampilkan pesan ramah', (tester) async {

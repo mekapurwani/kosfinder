@@ -8,7 +8,19 @@ abstract class KosRepository {
   Future<Kos?> fetchKosById(String id);
 }
 
-class SupabaseKosRepository implements KosRepository {
+abstract class OwnerKosRepository {
+  Future<List<Kos>> fetchKosMilikPemilik();
+  Future<Kos> createKos({
+    required String name,
+    required String addressArea,
+    required num monthlyPrice,
+    required String description,
+    required String whatsappNumber,
+    required String status,
+  });
+}
+
+class SupabaseKosRepository implements KosRepository, OwnerKosRepository {
   const SupabaseKosRepository(this.client);
 
   final SupabaseClient client;
@@ -86,6 +98,61 @@ class SupabaseKosRepository implements KosRepository {
     if (row == null) {
       return null;
     }
+    return Kos.fromMap(Map<String, dynamic>.from(row));
+  }
+
+  @override
+  Future<List<Kos>> fetchKosMilikPemilik() async {
+    final ownerId = client.auth.currentUser?.id;
+    if (ownerId == null) {
+      throw StateError('Pemilik belum login.');
+    }
+
+    final rows = await client
+        .from('kos')
+        .select(
+          'id, owner_id, name, address_area, monthly_price, '
+          'description, whatsapp_number, status, created_at',
+        )
+        .eq('owner_id', ownerId)
+        .order('created_at', ascending: false);
+
+    return rows
+        .map((row) => Kos.fromMap(Map<String, dynamic>.from(row)))
+        .toList();
+  }
+
+  @override
+  Future<Kos> createKos({
+    required String name,
+    required String addressArea,
+    required num monthlyPrice,
+    required String description,
+    required String whatsappNumber,
+    required String status,
+  }) async {
+    final ownerId = client.auth.currentUser?.id;
+    if (ownerId == null) {
+      throw StateError('Pemilik belum login.');
+    }
+
+    final row = await client
+        .from('kos')
+        .insert({
+          'owner_id': ownerId,
+          'name': name,
+          'address_area': addressArea,
+          'monthly_price': monthlyPrice,
+          'description': description,
+          'whatsapp_number': whatsappNumber,
+          'status': status,
+        })
+        .select(
+          'id, owner_id, name, address_area, monthly_price, '
+          'description, whatsapp_number, status, created_at',
+        )
+        .single();
+
     return Kos.fromMap(Map<String, dynamic>.from(row));
   }
 }

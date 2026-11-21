@@ -36,7 +36,10 @@ class _LoginScreenState extends State<LoginScreen> {
     }
 
     if (success) {
-      Navigator.of(context).pushNamedAndRemoveUntil('/home', (route) => false);
+      final profile = context.read<AuthProvider>().profile;
+      final destination = profile?.isPemilikKos ?? false ? '/owner' : '/home';
+      Navigator.of(context)
+          .pushNamedAndRemoveUntil(destination, (route) => false);
     } else {
       final message =
           context.read<AuthProvider>().errorMessage ?? 'Login gagal.';

@@ -12,6 +12,7 @@ import 'repositories/kos_repository.dart';
 import 'screens/kos_list_screen.dart';
 import 'screens/register_screen.dart';
 import 'screens/login_screen.dart';
+import 'screens/owner_kos_list_screen.dart';
 import 'services/supabase_config.dart';
 
 Future<void> main() async {
@@ -62,6 +63,7 @@ class MyApp extends StatelessWidget {
           '/register': (_) => const RegisterScreen(),
           '/login': (_) => const LoginScreen(),
           '/home': (_) => const KosListScreen(),
+          '/owner': (_) => const _OwnerRouteGuard(),
         },
         home: _AuthGate(
           authRepository: authRepository,
@@ -93,6 +95,7 @@ class _AuthGateState extends State<_AuthGate> {
   void initState() {
     super.initState();
     _wasAuthenticated = widget.authRepository.hasActiveSession;
+    context.read<AuthProvider>().restoreSession();
     _sessionSubscription = widget.authRepository.sessionChanges.listen((
       isActive,
     ) {
@@ -115,5 +118,31 @@ class _AuthGateState extends State<_AuthGate> {
   @override
   Widget build(BuildContext context) {
     return KosListScreen(configurationError: widget.configurationError);
+  }
+}
+
+class _OwnerRouteGuard extends StatelessWidget {
+  const _OwnerRouteGuard();
+
+  @override
+  Widget build(BuildContext context) {
+    final authProvider = context.watch<AuthProvider>();
+    if (!authProvider.hasActiveSession) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        Navigator.of(context)
+            .pushNamedAndRemoveUntil('/login', (route) => false);
+      });
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
+
+    if (!(authProvider.profile?.isPemilikKos ?? false)) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        Navigator.of(context)
+            .pushNamedAndRemoveUntil('/home', (route) => false);
+      });
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
+
+    return const OwnerKosListScreen();
   }
 }

@@ -179,6 +179,96 @@ void main() {
     expect(provider.selectedKos, isNull);
     expect(provider.errorMessage, 'Kos tidak ditemukan.');
   });
+
+  test('loadOwnedKos menyimpan hanya kos hasil repository pemilik', () async {
+    const owned = [
+      Kos(
+        id: 'owned-1',
+        name: 'Kos Mawar',
+        addressArea: 'Singaraja',
+        monthlyPrice: 800000,
+        ownerId: 'owner-1',
+      ),
+    ];
+    final provider = KosProvider(
+      repository: _FakeOwnerKosRepository(owned: owned),
+    );
+
+    await provider.loadOwnedKos();
+
+    expect(provider.ownedKos, owned);
+    expect(provider.errorMessage, isNull);
+  });
+
+  test('createKos menambahkan kos baru ke daftar pemilik', () async {
+    const created = Kos(
+      id: 'owned-2',
+      name: 'Kos Melati',
+      addressArea: 'Singaraja',
+      monthlyPrice: 900000,
+      description: 'Dekat kampus',
+      whatsappNumber: '628123456789',
+      status: 'Tersedia',
+      ownerId: 'owner-1',
+    );
+    final provider = KosProvider(
+      repository: _FakeOwnerKosRepository(created: created),
+    );
+
+    final success = await provider.createKos(
+      name: 'Kos Melati',
+      addressArea: 'Singaraja',
+      monthlyPrice: 900000,
+      description: 'Dekat kampus',
+      whatsappNumber: '628123456789',
+      status: 'Tersedia',
+    );
+
+    expect(success, isTrue);
+    expect(provider.ownedKos, [created]);
+  });
+}
+
+class _FakeOwnerKosRepository implements KosRepository, OwnerKosRepository {
+  _FakeOwnerKosRepository({this.owned = const [], this.created});
+
+  final List<Kos> owned;
+  final Kos? created;
+
+  @override
+  Future<List<Kos>> fetchKosTerbaru() async => owned;
+
+  @override
+  Future<List<Kos>> searchKosTerbaru(String query, {num? maxPrice}) async =>
+      owned;
+
+  @override
+  Future<Kos?> fetchKosById(String id) async => null;
+
+  @override
+  Future<List<Kos>> fetchKosMilikPemilik() async => owned;
+
+  @override
+  Future<Kos> createKos({
+    required String name,
+    required String addressArea,
+    required num monthlyPrice,
+    required String description,
+    required String whatsappNumber,
+    required String status,
+  }) async {
+    return created ??
+        Kos(
+          id: 'owned-new',
+          name: name,
+          addressArea: addressArea,
+          monthlyPrice: monthlyPrice,
+          description: description,
+          whatsappNumber: whatsappNumber,
+          status: status,
+          ownerId: 'owner-1',
+        );
+  }
 }
 
 class _DetailKosRepository implements KosRepository {

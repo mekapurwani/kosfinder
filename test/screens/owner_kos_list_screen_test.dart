@@ -1,0 +1,128 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:kosfinder/models/kos.dart';
+import 'package:kosfinder/providers/kos_provider.dart';
+import 'package:kosfinder/repositories/kos_repository.dart';
+import 'package:kosfinder/screens/owner_kos_list_screen.dart';
+import 'package:provider/provider.dart';
+
+class _FakeOwnerKosRepository implements KosRepository, OwnerKosRepository {
+  _FakeOwnerKosRepository(this.owned);
+
+  final List<Kos> owned;
+
+  @override
+  Future<List<Kos>> fetchKosTerbaru() async => owned;
+
+  @override
+  Future<List<Kos>> searchKosTerbaru(String query, {num? maxPrice}) async =>
+      owned;
+
+  @override
+  Future<Kos?> fetchKosById(String id) async => null;
+
+  @override
+  Future<List<Kos>> fetchKosMilikPemilik() async => owned;
+
+  @override
+  Future<Kos> createKos({
+    required String name,
+    required String addressArea,
+    required num monthlyPrice,
+    required String description,
+    required String whatsappNumber,
+    required String status,
+  }) async {
+    return Kos(
+      id: 'new',
+      name: name,
+      addressArea: addressArea,
+      monthlyPrice: monthlyPrice,
+      description: description,
+      whatsappNumber: whatsappNumber,
+      status: status,
+      ownerId: 'owner-1',
+    );
+  }
+}
+
+void main() {
+  testWidgets('menampilkan daftar kos milik pemilik', (tester) async {
+    const owned = [
+      Kos(
+        id: 'owned-1',
+        name: 'Kos Mawar',
+        addressArea: 'Singaraja',
+        monthlyPrice: 800000,
+        ownerId: 'owner-1',
+      ),
+    ];
+    final provider = KosProvider(repository: _FakeOwnerKosRepository(owned));
+
+    await tester.pumpWidget(
+      ChangeNotifierProvider.value(
+        value: provider,
+        child: const MaterialApp(home: OwnerKosListScreen()),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Kos Mawar'), findsOneWidget);
+    expect(find.byKey(const Key('add-kos')), findsOneWidget);
+  });
+
+  testWidgets('tombol tambah membuka form kos', (tester) async {
+    final provider = KosProvider(repository: _FakeOwnerKosRepository(const []));
+
+    await tester.pumpWidget(
+      ChangeNotifierProvider.value(
+        value: provider,
+        child: const MaterialApp(home: OwnerKosListScreen()),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const Key('add-kos')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Tambah Kos'), findsOneWidget);
+  });
+
+  testWidgets('tombol kembali keluar dari halaman Kos Saya', (tester) async {
+    final provider = KosProvider(repository: _FakeOwnerKosRepository(const []));
+
+    await tester.pumpWidget(
+      ChangeNotifierProvider.value(
+        value: provider,
+        child: MaterialApp(
+          routes: {
+            '/home': (_) => const Scaffold(body: Text('Halaman Publik')),
+          },
+          home: Scaffold(
+            body: Builder(
+              builder: (context) => TextButton(
+                onPressed: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute<void>(
+                      builder: (_) => const OwnerKosListScreen(),
+                    ),
+                  );
+                },
+                child: const Text('Buka Kos Saya'),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    await tester.tap(find.text('Buka Kos Saya'));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('owner-kos-back')), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('owner-kos-back')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Buka Kos Saya'), findsOneWidget);
+  });
+}

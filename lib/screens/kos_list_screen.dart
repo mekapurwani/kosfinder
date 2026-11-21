@@ -61,25 +61,44 @@ class _KosListScreenState extends State<KosListScreen> {
         actions: [
           Consumer<AuthProvider>(
             builder: (context, authProvider, _) {
-              if (authProvider.hasActiveSession) {
-                return IconButton(
-                  key: const Key('logout-appbar'),
-                  tooltip: 'Logout',
-                  onPressed: authProvider.isLoading
-                      ? null
-                      : () => authProvider.logout(),
-                  icon: const Icon(Icons.logout),
+              final actions = <Widget>[];
+              if (authProvider.profile?.isPemilikKos ?? false) {
+                actions.add(
+                  IconButton(
+                    key: const Key('open-owner-kos'),
+                    tooltip: 'Kos Saya',
+                    onPressed: () {
+                      Navigator.of(context).pushNamed('/owner');
+                    },
+                    icon: const Icon(Icons.apartment),
+                  ),
                 );
               }
+              if (authProvider.hasActiveSession) {
+                actions.add(
+                  IconButton(
+                    key: const Key('logout-appbar'),
+                    tooltip: 'Logout',
+                    onPressed: authProvider.isLoading
+                        ? null
+                        : () => authProvider.logout(),
+                    icon: const Icon(Icons.logout),
+                  ),
+                );
+                return Row(mainAxisSize: MainAxisSize.min, children: actions);
+              }
 
-              return IconButton(
-                key: const Key('open-login'),
-                tooltip: 'Login',
-                onPressed: () {
-                  Navigator.of(context).pushNamed('/login');
-                },
-                icon: const Icon(Icons.login),
+              actions.add(
+                IconButton(
+                  key: const Key('open-login'),
+                  tooltip: 'Login',
+                  onPressed: () {
+                    Navigator.of(context).pushNamed('/login');
+                  },
+                  icon: const Icon(Icons.login),
+                ),
               );
+              return Row(mainAxisSize: MainAxisSize.min, children: actions);
             },
           ),
           IconButton(

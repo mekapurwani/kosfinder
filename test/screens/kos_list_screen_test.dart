@@ -41,6 +41,10 @@ class _FakeAuthRepository implements AuthRepository {
 
   @override
   bool get hasActiveSession => _active;
+  @override
+  Profile? get currentProfile => _active
+      ? const Profile(id: 'fake-user', name: 'Meka', role: 'pemilik_kos')
+      : null;
 
   @override
   Stream<bool> get sessionChanges => const Stream<bool>.empty();
@@ -345,5 +349,43 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byKey(const Key('open-login')), findsOneWidget);
+  });
+
+  testWidgets('pemilik melihat akses Kos Saya pada AppBar', (tester) async {
+    final authRepository = _FakeAuthRepository();
+    final authProvider = AuthProvider(repository: authRepository);
+    await authProvider.login(
+      email: 'meka@example.com',
+      password: 'password123',
+    );
+    const kos = [
+      Kos(
+        id: '1',
+        name: 'Kos Mawar',
+        addressArea: 'Singaraja',
+        monthlyPrice: 800000,
+      ),
+    ];
+    final kosProvider = KosProvider(repository: _FakeKosRepository(kos));
+
+    await tester.pumpWidget(
+      MultiProvider(
+        providers: [
+          ChangeNotifierProvider.value(value: kosProvider),
+          ChangeNotifierProvider.value(value: authProvider),
+        ],
+        child: MaterialApp(
+          routes: {
+            '/owner': (_) => const Scaffold(body: Text('Kos Saya')),
+            '/login': (_) => const LoginScreen(),
+            '/register': (_) => const RegisterScreen(),
+          },
+          home: const KosListScreen(),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('open-owner-kos')), findsOneWidget);
   });
 }

@@ -10,6 +10,7 @@ class KosProvider extends ChangeNotifier {
 
   List<Kos> _kos = [];
   Kos? _selectedKos;
+  List<Kos> _ownedKos = [];
   bool _isLoading = false;
   String? _errorMessage;
 
@@ -17,6 +18,65 @@ class KosProvider extends ChangeNotifier {
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
   Kos? get selectedKos => _selectedKos;
+  List<Kos> get ownedKos => List.unmodifiable(_ownedKos);
+
+  OwnerKosRepository get _ownerRepository {
+    if (repository is OwnerKosRepository) {
+      return repository as OwnerKosRepository;
+    }
+    throw StateError('Repository pemilik tidak tersedia.');
+  }
+
+  Future<void> loadOwnedKos() async {
+    _isLoading = true;
+    _errorMessage = null;
+    notifyListeners();
+
+    try {
+      _ownedKos = await _ownerRepository.fetchKosMilikPemilik();
+    } catch (error, stackTrace) {
+      debugPrint('Gagal memuat kos pemilik: $error');
+      debugPrintStack(label: 'Stack trace kos pemilik', stackTrace: stackTrace);
+      _errorMessage = 'Tidak dapat memuat kos Anda. Periksa koneksi internet.';
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<bool> createKos({
+    required String name,
+    required String addressArea,
+    required num monthlyPrice,
+    required String description,
+    required String whatsappNumber,
+    required String status,
+  }) async {
+    _isLoading = true;
+    _errorMessage = null;
+    notifyListeners();
+
+    try {
+      final kos = await _ownerRepository.createKos(
+        name: name,
+        addressArea: addressArea,
+        monthlyPrice: monthlyPrice,
+        description: description,
+        whatsappNumber: whatsappNumber,
+        status: status,
+      );
+      _ownedKos = [kos, ..._ownedKos];
+      return true;
+    } catch (error, stackTrace) {
+      debugPrint('Gagal menambah kos: $error');
+      debugPrintStack(label: 'Stack trace tambah kos', stackTrace: stackTrace);
+      _errorMessage = 'Tidak dapat menambah kos. Periksa koneksi internet.';
+      return false;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
 
   Future<void> loadKos() async {
     _isLoading = true;

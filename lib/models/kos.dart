@@ -7,6 +7,7 @@ class Kos {
     this.description = '',
     this.whatsappNumber = '',
     this.status = 'Tersedia',
+    this.ownerId,
   });
 
   final String id;
@@ -16,6 +17,7 @@ class Kos {
   final String description;
   final String whatsappNumber;
   final String status;
+  final String? ownerId;
 
   factory Kos.fromMap(Map<String, dynamic> map) {
     final rawPrice = map['monthly_price'];
@@ -31,6 +33,7 @@ class Kos {
       description: map['description']?.toString() ?? '',
       whatsappNumber: map['whatsapp_number']?.toString() ?? '',
       status: map['status']?.toString() ?? 'Tersedia',
+      ownerId: map['owner_id']?.toString(),
     );
   }
 
