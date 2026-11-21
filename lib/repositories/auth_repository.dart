@@ -9,6 +9,10 @@ abstract class AuthRepository {
 
   Future<void> restoreSession();
 
+  Future<Profile> login({required String email, required String password});
+
+  Future<void> logout();
+
   Future<Profile> register({
     required String name,
     required String email,
@@ -35,6 +39,33 @@ class SupabaseAuthRepository implements AuthRepository {
   @override
   Future<void> restoreSession() async {
     client.auth.currentSession;
+  }
+
+  @override
+  Future<Profile> login({
+    required String email,
+    required String password,
+  }) async {
+    final response = await client.auth.signInWithPassword(
+      email: email,
+      password: password,
+    );
+    final user = response.user;
+    if (user == null) {
+      throw const AuthException('Login gagal.');
+    }
+
+    final metadata = user.userMetadata ?? {};
+    return Profile(
+      id: user.id,
+      name: metadata['name']?.toString() ?? '',
+      role: metadata['role']?.toString() ?? 'pencari_kos',
+    );
+  }
+
+  @override
+  Future<void> logout() async {
+    await client.auth.signOut();
   }
 
   @override
@@ -72,6 +103,17 @@ class MissingAuthRepository implements AuthRepository {
 
   @override
   Future<void> restoreSession() async {}
+
+  @override
+  Future<Profile> login({
+    required String email,
+    required String password,
+  }) async {
+    throw StateError('Konfigurasi Supabase belum tersedia.');
+  }
+
+  @override
+  Future<void> logout() async {}
 
   @override
   Future<Profile> register({

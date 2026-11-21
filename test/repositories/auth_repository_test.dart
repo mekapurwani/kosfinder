@@ -21,6 +21,19 @@ class _FakeAuthRepository implements AuthRepository {
   }
 
   @override
+  Future<Profile> login({
+    required String email,
+    required String password,
+  }) async {
+    return Profile(id: 'fake-user', name: 'Meka', role: 'pemilik_kos');
+  }
+
+  @override
+  Future<void> logout() async {
+    sessionActive = false;
+  }
+
+  @override
   Future<Profile> register({
     required String name,
     required String email,
@@ -81,5 +94,25 @@ void main() {
 
     expect(profile.name, 'Meka');
     expect(profile.role, 'pemilik_kos');
+  });
+
+  test('login fake mengembalikan profil pemilik', () async {
+    final repository = _FakeAuthRepository();
+
+    final profile = await repository.login(
+      email: 'meka@example.com',
+      password: 'password123',
+    );
+
+    expect(profile.role, 'pemilik_kos');
+  });
+
+  test('logout fake mengakhiri sesi', () async {
+    final repository = _FakeAuthRepository();
+    repository.emitSession(true);
+
+    await repository.logout();
+
+    expect(repository.hasActiveSession, isFalse);
   });
 }

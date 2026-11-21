@@ -7,6 +7,7 @@ class _FakeAuthRepository implements AuthRepository {
   _FakeAuthRepository({this.error});
 
   final Object? error;
+  bool loggedOut = false;
   String? lastName;
   String? lastEmail;
   String? lastPassword;
@@ -20,6 +21,24 @@ class _FakeAuthRepository implements AuthRepository {
 
   @override
   Future<void> restoreSession() async {}
+
+  @override
+  Future<Profile> login({
+    required String email,
+    required String password,
+  }) async {
+    lastEmail = email;
+    lastPassword = password;
+    if (error != null) {
+      throw error!;
+    }
+    return Profile(id: 'fake-user', name: 'Meka', role: 'pemilik_kos');
+  }
+
+  @override
+  Future<void> logout() async {
+    loggedOut = true;
+  }
 
   @override
   Future<Profile> register({
@@ -91,5 +110,44 @@ void main() {
       provider.errorMessage,
       'Registrasi gagal. Periksa data atau koneksi Anda.',
     );
+  });
+
+  test('login menyimpan profil dan mengembalikan sukses', () async {
+    final repository = _FakeAuthRepository();
+    final provider = AuthProvider(repository: repository);
+
+    final success = await provider.login(
+      email: 'meka@example.com',
+      password: 'password123',
+    );
+
+    expect(success, isTrue);
+    expect(repository.lastEmail, 'meka@example.com');
+    expect(provider.profile?.role, 'pemilik_kos');
+  });
+
+  test('login menampilkan error ramah saat gagal', () async {
+    final provider = AuthProvider(
+      repository: _FakeAuthRepository(error: Exception('unauthorized')),
+    );
+
+    final success = await provider.login(
+      email: 'meka@example.com',
+      password: 'salah',
+    );
+
+    expect(success, isFalse);
+    expect(provider.errorMessage, 'Email atau password salah.');
+  });
+
+  test('logout menghapus profil', () async {
+    final repository = _FakeAuthRepository();
+    final provider = AuthProvider(repository: repository);
+    await provider.login(email: 'meka@example.com', password: 'password123');
+
+    await provider.logout();
+
+    expect(repository.loggedOut, isTrue);
+    expect(provider.profile, isNull);
   });
 }

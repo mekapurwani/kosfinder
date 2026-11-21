@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../providers/auth_provider.dart';
 import '../providers/kos_provider.dart';
 import 'kos_detail_screen.dart';
 
@@ -58,6 +59,29 @@ class _KosListScreenState extends State<KosListScreen> {
       appBar: AppBar(
         title: const Text('KosFinder'),
         actions: [
+          Consumer<AuthProvider>(
+            builder: (context, authProvider, _) {
+              if (authProvider.hasActiveSession) {
+                return IconButton(
+                  key: const Key('logout-appbar'),
+                  tooltip: 'Logout',
+                  onPressed: authProvider.isLoading
+                      ? null
+                      : () => authProvider.logout(),
+                  icon: const Icon(Icons.logout),
+                );
+              }
+
+              return IconButton(
+                key: const Key('open-login'),
+                tooltip: 'Login',
+                onPressed: () {
+                  Navigator.of(context).pushNamed('/login');
+                },
+                icon: const Icon(Icons.login),
+              );
+            },
+          ),
           IconButton(
             key: const Key('open-register'),
             tooltip: 'Registrasi',

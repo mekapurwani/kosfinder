@@ -7,6 +7,7 @@ import 'package:kosfinder/providers/kos_provider.dart';
 import 'package:kosfinder/repositories/auth_repository.dart';
 import 'package:kosfinder/repositories/kos_repository.dart';
 import 'package:kosfinder/screens/kos_list_screen.dart';
+import 'package:kosfinder/screens/login_screen.dart';
 import 'package:kosfinder/screens/register_screen.dart';
 import 'package:provider/provider.dart';
 
@@ -36,14 +37,30 @@ class _FakeKosRepository implements KosRepository {
 }
 
 class _FakeAuthRepository implements AuthRepository {
+  bool _active = false;
+
   @override
-  bool get hasActiveSession => false;
+  bool get hasActiveSession => _active;
 
   @override
   Stream<bool> get sessionChanges => const Stream<bool>.empty();
 
   @override
   Future<void> restoreSession() async {}
+
+  @override
+  Future<Profile> login({
+    required String email,
+    required String password,
+  }) async {
+    _active = true;
+    return Profile(id: 'fake-user', name: 'Meka', role: 'pemilik_kos');
+  }
+
+  @override
+  Future<void> logout() async {
+    _active = false;
+  }
 
   @override
   Future<Profile> register({
@@ -57,16 +74,21 @@ class _FakeAuthRepository implements AuthRepository {
 }
 
 void main() {
-  Widget buildScreen(List<Kos> kos) {
+  Widget buildScreen(List<Kos> kos, {_FakeAuthRepository? authRepository}) {
     final provider = KosProvider(repository: _FakeKosRepository(kos));
-    final authProvider = AuthProvider(repository: _FakeAuthRepository());
+    final authProvider = AuthProvider(
+      repository: authRepository ?? _FakeAuthRepository(),
+    );
 
     return ChangeNotifierProvider.value(
       value: provider,
       child: ChangeNotifierProvider.value(
         value: authProvider,
         child: MaterialApp(
-          routes: {'/register': (_) => const RegisterScreen()},
+          routes: {
+            '/register': (_) => const RegisterScreen(),
+            '/login': (_) => const LoginScreen(),
+          },
           home: const KosListScreen(),
         ),
       ),
@@ -260,5 +282,68 @@ void main() {
     expect(find.text('Registrasi'), findsOneWidget);
     expect(find.byKey(const Key('register-name')), findsOneWidget);
     expect(find.byKey(const Key('register-role')), findsOneWidget);
+  });
+
+  testWidgets('tombol login terbuka dari AppBar', (tester) async {
+    const kos = [
+      Kos(
+        id: '1',
+        name: 'Kos Mawar',
+        addressArea: 'Singaraja',
+        monthlyPrice: 800000,
+      ),
+    ];
+
+    await tester.pumpWidget(buildScreen(kos));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('open-login')), findsOneWidget);
+    await tester.tap(find.byKey(const Key('open-login')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Login'), findsWidgets);
+  });
+
+  testWidgets('pengguna login melihat tombol logout dan bisa logout', (
+    tester,
+  ) async {
+    final authRepository = _FakeAuthRepository();
+    final authProvider = AuthProvider(repository: authRepository);
+    await authProvider.login(
+      email: 'meka@example.com',
+      password: 'password123',
+    );
+    const kos = [
+      Kos(
+        id: '1',
+        name: 'Kos Mawar',
+        addressArea: 'Singaraja',
+        monthlyPrice: 800000,
+      ),
+    ];
+    final kosProvider = KosProvider(repository: _FakeKosRepository(kos));
+
+    await tester.pumpWidget(
+      MultiProvider(
+        providers: [
+          ChangeNotifierProvider.value(value: kosProvider),
+          ChangeNotifierProvider.value(value: authProvider),
+        ],
+        child: MaterialApp(
+          routes: {
+            '/login': (_) => const LoginScreen(),
+            '/register': (_) => const RegisterScreen(),
+          },
+          home: const KosListScreen(),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('logout-appbar')), findsOneWidget);
+    await tester.tap(find.byKey(const Key('logout-appbar')));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('open-login')), findsOneWidget);
   });
 }

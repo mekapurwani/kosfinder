@@ -16,6 +16,49 @@ class AuthProvider extends ChangeNotifier {
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
 
+  bool get hasActiveSession => repository.hasActiveSession;
+
+  Future<void> restoreSession() async {
+    await repository.restoreSession();
+  }
+
+  Future<bool> login({required String email, required String password}) async {
+    _isLoading = true;
+    _errorMessage = null;
+    notifyListeners();
+
+    try {
+      _profile = await repository.login(email: email, password: password);
+      return true;
+    } catch (error, stackTrace) {
+      debugPrint('Gagal login: $error');
+      debugPrintStack(label: 'Stack trace login', stackTrace: stackTrace);
+      _errorMessage = 'Email atau password salah.';
+      return false;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<void> logout() async {
+    _isLoading = true;
+    _errorMessage = null;
+    notifyListeners();
+
+    try {
+      await repository.logout();
+      _profile = null;
+    } catch (error, stackTrace) {
+      debugPrint('Gagal logout: $error');
+      debugPrintStack(label: 'Stack trace logout', stackTrace: stackTrace);
+      _errorMessage = 'Logout gagal. Silakan coba lagi.';
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
   Future<bool> register({
     required String name,
     required String email,
