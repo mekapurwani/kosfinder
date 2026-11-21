@@ -388,4 +388,29 @@ void main() {
 
     expect(find.byKey(const Key('open-owner-kos')), findsOneWidget);
   });
+
+  testWidgets('daftar menampilkan status Tersedia dan Penuh', (tester) async {
+    const kos = [
+      Kos(
+        id: '1',
+        name: 'Kos Mawar',
+        addressArea: 'Singaraja',
+        monthlyPrice: 800000,
+        status: 'Tersedia',
+      ),
+      Kos(
+        id: '2',
+        name: 'Kos Melati',
+        addressArea: 'Singaraja',
+        monthlyPrice: 900000,
+        status: 'Penuh',
+      ),
+    ];
+
+    await tester.pumpWidget(buildScreen(kos));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Tersedia'), findsOneWidget);
+    expect(find.text('Penuh'), findsOneWidget);
+  });
 }

@@ -164,4 +164,36 @@ void main() {
     expect(find.text('Singaraja'), findsOneWidget);
     expect(find.text('Penuh'), findsOneWidget);
   });
+
+  testWidgets('edit status mengirim Penuh atau Tersedia', (tester) async {
+    const kos = Kos(
+      id: 'owned-1',
+      name: 'Kos Mawar',
+      addressArea: 'Singaraja',
+      monthlyPrice: 800000,
+      description: 'Dekat kampus',
+      whatsappNumber: '628123456789',
+      status: 'Tersedia',
+      ownerId: 'owner-1',
+    );
+    final repository = _FakeOwnerKosRepository();
+    final provider = KosProvider(repository: repository);
+
+    await tester.pumpWidget(
+      ChangeNotifierProvider.value(
+        value: provider,
+        child: const MaterialApp(home: KosFormScreen(kos: kos)),
+      ),
+    );
+
+    await tester.tap(find.byKey(const Key('kos-status')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Penuh').last);
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const Key('save-kos')));
+    await tester.pumpAndSettle();
+
+    expect(repository.lastStatus, 'Penuh');
+  });
 }

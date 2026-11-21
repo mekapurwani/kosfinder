@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
 import '../providers/kos_provider.dart';
 import 'kos_detail_screen.dart';
+import '../widgets/status_badge.dart';
 
 class KosListScreen extends StatefulWidget {
   const KosListScreen({super.key, this.configurationError});
@@ -194,6 +195,7 @@ class _KosListScreenState extends State<KosListScreen> {
                                   'Rp${kos.monthlyPrice.toStringAsFixed(0)} '
                                   '/ bulan',
                                 ),
+                                trailing: StatusBadge(status: kos.status),
                                 onTap: () {
                                   Navigator.of(context).push(
                                     MaterialPageRoute<void>(

@@ -375,6 +375,37 @@ void main() {
     );
   });
 
+  test('updateKos status offline mempertahankan status lama', () async {
+    const original = Kos(
+      id: 'owned-1',
+      name: 'Kos Mawar',
+      addressArea: 'Singaraja',
+      monthlyPrice: 800000,
+      status: 'Tersedia',
+      ownerId: 'owner-1',
+    );
+    final provider = KosProvider(
+      repository: _FakeOwnerKosRepository(
+        owned: [original],
+        updateError: Exception('offline'),
+      ),
+    );
+    await provider.loadKos();
+
+    final success = await provider.updateKos(
+      id: 'owned-1',
+      name: 'Kos Mawar',
+      addressArea: 'Singaraja',
+      monthlyPrice: 800000,
+      description: 'Dekat kampus',
+      whatsappNumber: '628123456789',
+      status: 'Penuh',
+    );
+
+    expect(success, isFalse);
+    expect(provider.kos.single.status, 'Tersedia');
+  });
+
   test('deleteKos menghapus kos dari daftar pemilik', () async {
     const owned = [
       Kos(

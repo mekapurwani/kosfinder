@@ -35,7 +35,7 @@ class _KosFormScreenState extends State<KosFormScreen> {
       _priceController.text = kos.monthlyPrice.toStringAsFixed(0);
       _descriptionController.text = kos.description;
       _whatsappController.text = kos.whatsappNumber;
-      _status = kos.status;
+      _status = kos.status == 'Penuh' ? 'Penuh' : 'Tersedia';
     }
   }
 
