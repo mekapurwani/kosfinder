@@ -187,6 +187,57 @@ void main() {
     expect(find.text('Penuh'), findsOneWidget);
   });
 
+  testWidgets('tombol About membuka identitas aplikasi', (tester) async {
+    final provider = KosProvider(repository: _FakeOwnerKosRepository(const []));
+
+    await tester.pumpWidget(
+      ChangeNotifierProvider.value(
+        value: provider,
+        child: const MaterialApp(home: OwnerKosListScreen()),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const Key('open-about')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('About'), findsOneWidget);
+    expect(find.text('2415051089 - Ni Luh Meka Purwani'), findsOneWidget);
+  });
+
+  testWidgets('pemilik dapat melihat beberapa kos miliknya sendiri', (
+    tester,
+  ) async {
+    const owned = [
+      Kos(
+        id: 'owned-1',
+        name: 'Kos Mawar',
+        addressArea: 'Singaraja',
+        monthlyPrice: 800000,
+        ownerId: 'owner-1',
+      ),
+      Kos(
+        id: 'owned-2',
+        name: 'Kos Melati',
+        addressArea: 'Singaraja',
+        monthlyPrice: 900000,
+        ownerId: 'owner-1',
+      ),
+    ];
+    final provider = KosProvider(repository: _FakeOwnerKosRepository(owned));
+
+    await tester.pumpWidget(
+      ChangeNotifierProvider.value(
+        value: provider,
+        child: const MaterialApp(home: OwnerKosListScreen()),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Kos Mawar'), findsOneWidget);
+    expect(find.text('Kos Melati'), findsOneWidget);
+  });
+
   testWidgets('delete batal tidak menghapus kos', (tester) async {
     const owned = [
       Kos(

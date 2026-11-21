@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import '../models/kos.dart';
 import '../providers/kos_provider.dart';
+import 'about_screen.dart';
 import 'kos_form_screen.dart';
 
 class OwnerKosListScreen extends StatefulWidget {
@@ -104,6 +105,18 @@ class _OwnerKosListScreenState extends State<OwnerKosListScreen> {
           icon: const Icon(Icons.arrow_back),
         ),
         title: const Text('Kos Saya'),
+        actions: [
+          IconButton(
+            key: const Key('open-about'),
+            tooltip: 'About',
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute<void>(builder: (_) => const AboutScreen()),
+              );
+            },
+            icon: const Icon(Icons.info_outline),
+          ),
+        ],
       ),
       floatingActionButton: FloatingActionButton(
         key: const Key('add-kos'),
