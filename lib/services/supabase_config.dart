@@ -8,7 +8,8 @@ class SupabaseConfig {
       url.isNotEmpty &&
       anonKey.isNotEmpty &&
       !url.contains('<') &&
-      !anonKey.contains('<');
+      !anonKey.contains('<') &&
+      Uri.tryParse(url)?.hasScheme == true;
 
   factory SupabaseConfig.fromEnvironment() {
     return const SupabaseConfig(

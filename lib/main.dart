@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'providers/kos_provider.dart';
+import 'repositories/auth_repository.dart';
 import 'repositories/kos_repository.dart';
 import 'screens/kos_list_screen.dart';
 import 'services/supabase_config.dart';
@@ -28,13 +29,19 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final authRepository = config.isConfigured
+        ? SupabaseAuthRepository(Supabase.instance.client)
+        : const MissingAuthRepository();
     final repository = config.isConfigured
         ? SupabaseKosRepository(Supabase.instance.client)
         : const MissingSupabaseKosRepository();
     final provider = KosProvider(repository: repository);
 
-    return ChangeNotifierProvider.value(
-      value: provider,
+    return MultiProvider(
+      providers: [
+        Provider<AuthRepository>.value(value: authRepository),
+        ChangeNotifierProvider.value(value: provider),
+      ],
       child: MaterialApp(
         title: 'KosFinder',
         debugShowCheckedModeBanner: false,
