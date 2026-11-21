@@ -8,6 +8,7 @@ class Kos {
     this.whatsappNumber = '',
     this.status = 'Tersedia',
     this.ownerId,
+    this.roomCount = 0,
   });
 
   final String id;
@@ -18,12 +19,17 @@ class Kos {
   final String whatsappNumber;
   final String status;
   final String? ownerId;
+  final int roomCount;
 
   factory Kos.fromMap(Map<String, dynamic> map) {
     final rawPrice = map['monthly_price'];
     final price = rawPrice is num
         ? rawPrice
         : num.tryParse(rawPrice?.toString() ?? '') ?? 0;
+    final rawRoomCount = map['room_count'];
+    final roomCount = rawRoomCount is int
+        ? rawRoomCount
+        : int.tryParse(rawRoomCount?.toString() ?? '') ?? 0;
 
     return Kos(
       id: map['id']?.toString() ?? '',
@@ -34,6 +40,7 @@ class Kos {
       whatsappNumber: map['whatsapp_number']?.toString() ?? '',
       status: map['status']?.toString() ?? 'Tersedia',
       ownerId: map['owner_id']?.toString(),
+      roomCount: roomCount,
     );
   }
 

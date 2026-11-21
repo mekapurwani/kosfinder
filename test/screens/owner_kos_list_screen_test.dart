@@ -32,6 +32,7 @@ class _FakeOwnerKosRepository implements KosRepository, OwnerKosRepository {
     required String description,
     required String whatsappNumber,
     required String status,
+    int roomCount = 0,
   }) async {
     return Kos(
       id: 'new',
@@ -42,6 +43,7 @@ class _FakeOwnerKosRepository implements KosRepository, OwnerKosRepository {
       whatsappNumber: whatsappNumber,
       status: status,
       ownerId: 'owner-1',
+      roomCount: roomCount,
     );
   }
 
@@ -54,6 +56,7 @@ class _FakeOwnerKosRepository implements KosRepository, OwnerKosRepository {
     required String description,
     required String whatsappNumber,
     required String status,
+    int roomCount = 0,
   }) async {
     return Kos(
       id: id,
@@ -64,6 +67,7 @@ class _FakeOwnerKosRepository implements KosRepository, OwnerKosRepository {
       whatsappNumber: whatsappNumber,
       status: status,
       ownerId: 'owner-1',
+      roomCount: roomCount,
     );
   }
 

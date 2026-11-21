@@ -13,6 +13,7 @@ void main() {
       description: 'Dekat kampus dan minimarket',
       whatsappNumber: '628123456789',
       status: 'Penuh',
+      roomCount: 3,
     );
 
     await tester.pumpWidget(const MaterialApp(home: KosDetailScreen(kos: kos)));
@@ -22,6 +23,7 @@ void main() {
     expect(find.text('Rp950000 / bulan'), findsOneWidget);
     expect(find.text('Dekat kampus dan minimarket'), findsOneWidget);
     expect(find.text('Penuh'), findsOneWidget);
+    expect(find.text('Jumlah kamar: 3'), findsOneWidget);
     expect(find.text('Hubungi Pemilik'), findsOneWidget);
   });
 

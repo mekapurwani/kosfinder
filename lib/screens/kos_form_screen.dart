@@ -21,13 +21,19 @@ class _KosFormScreenState extends State<KosFormScreen> {
   final _priceController = TextEditingController();
   final _descriptionController = TextEditingController();
   final _whatsappController = TextEditingController();
-  String _status = 'Tersedia';
+  final _roomCountController = TextEditingController();
 
   bool get _isEdit => widget.kos != null;
+
+  String get _status {
+    final roomCount = int.tryParse(_roomCountController.text.trim());
+    return roomCount == null || roomCount > 0 ? 'Tersedia' : 'Penuh';
+  }
 
   @override
   void initState() {
     super.initState();
+    _roomCountController.addListener(_roomCountChanged);
     final kos = widget.kos;
     if (kos != null) {
       _nameController.text = kos.name;
@@ -35,17 +41,27 @@ class _KosFormScreenState extends State<KosFormScreen> {
       _priceController.text = kos.monthlyPrice.toStringAsFixed(0);
       _descriptionController.text = kos.description;
       _whatsappController.text = kos.whatsappNumber;
-      _status = kos.status == 'Penuh' ? 'Penuh' : 'Tersedia';
+      _roomCountController.text = kos.roomCount.toString();
+    } else {
+      _roomCountController.text = '0';
+    }
+  }
+
+  void _roomCountChanged() {
+    if (mounted) {
+      setState(() {});
     }
   }
 
   @override
   void dispose() {
+    _roomCountController.removeListener(_roomCountChanged);
     _nameController.dispose();
     _addressController.dispose();
     _priceController.dispose();
     _descriptionController.dispose();
     _whatsappController.dispose();
+    _roomCountController.dispose();
     super.dispose();
   }
 
@@ -62,6 +78,15 @@ class _KosFormScreenState extends State<KosFormScreen> {
       return;
     }
 
+    final roomCount = int.tryParse(_roomCountController.text.trim());
+    if (roomCount == null || roomCount < 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Jumlah kamar harus berupa angka')),
+      );
+      return;
+    }
+    final status = roomCount == 0 ? 'Penuh' : _status;
+
     final provider = context.read<KosProvider>();
     final success = _isEdit
         ? await provider.updateKos(
@@ -71,7 +96,8 @@ class _KosFormScreenState extends State<KosFormScreen> {
             monthlyPrice: price,
             description: _descriptionController.text.trim(),
             whatsappNumber: _whatsappController.text.trim(),
-            status: _status,
+            status: status,
+            roomCount: roomCount,
           )
         : await provider.createKos(
             name: _nameController.text.trim(),
@@ -79,7 +105,8 @@ class _KosFormScreenState extends State<KosFormScreen> {
             monthlyPrice: price,
             description: _descriptionController.text.trim(),
             whatsappNumber: _whatsappController.text.trim(),
-            status: _status,
+            status: status,
+            roomCount: roomCount,
           );
 
     if (!mounted) {
@@ -173,25 +200,36 @@ class _KosFormScreenState extends State<KosFormScreen> {
                         : null,
                   ),
                   const SizedBox(height: 12),
-                  DropdownButtonFormField<String>(
+                  TextFormField(
+                    key: const Key('kos-room-count'),
+                    controller: _roomCountController,
+                    keyboardType: TextInputType.number,
+                    inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                    decoration: const InputDecoration(
+                      labelText: 'Jumlah kamar',
+                      border: OutlineInputBorder(),
+                    ),
+                    validator: (value) => value == null || value.isEmpty
+                        ? 'Jumlah kamar wajib diisi'
+                        : null,
+                  ),
+                  const SizedBox(height: 12),
+                  InputDecorator(
                     key: const Key('kos-status'),
-                    initialValue: _status,
                     decoration: const InputDecoration(
                       labelText: 'Status',
                       border: OutlineInputBorder(),
                     ),
-                    items: const [
-                      DropdownMenuItem(
-                        value: 'Tersedia',
-                        child: Text('Tersedia'),
+                    child: Text(
+                      _status,
+                      key: const Key('kos-status-value'),
+                      style: TextStyle(
+                        color: _status == 'Tersedia'
+                            ? Colors.green
+                            : Colors.red,
+                        fontWeight: FontWeight.w700,
                       ),
-                      DropdownMenuItem(value: 'Penuh', child: Text('Penuh')),
-                    ],
-                    onChanged: (value) {
-                      if (value != null) {
-                        setState(() => _status = value);
-                      }
-                    },
+                    ),
                   ),
                   const SizedBox(height: 16),
                   FilledButton(

@@ -49,6 +49,11 @@ class KosDetailScreen extends StatelessWidget {
           ),
           const SizedBox(height: 16),
           Text(kos.description),
+          const SizedBox(height: 16),
+          Text(
+            'Jumlah kamar: ${kos.roomCount}',
+            key: const Key('detail-room-count'),
+          ),
           const SizedBox(height: 24),
           FilledButton.icon(
             onPressed: () => _openWhatsApp(context),

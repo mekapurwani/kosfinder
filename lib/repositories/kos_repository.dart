@@ -17,6 +17,7 @@ abstract class OwnerKosRepository {
     required String description,
     required String whatsappNumber,
     required String status,
+    int roomCount = 0,
   });
   Future<Kos> updateKos({
     required String id,
@@ -26,6 +27,7 @@ abstract class OwnerKosRepository {
     required String description,
     required String whatsappNumber,
     required String status,
+    int roomCount = 0,
   });
   Future<void> deleteKos(String id);
 }
@@ -41,7 +43,7 @@ class SupabaseKosRepository implements KosRepository, OwnerKosRepository {
         .from('kos')
         .select(
           'id, name, address_area, monthly_price, '
-          'description, whatsapp_number, status',
+          'description, whatsapp_number, status, room_count',
         )
         .order('created_at', ascending: false);
 
@@ -58,7 +60,7 @@ class SupabaseKosRepository implements KosRepository, OwnerKosRepository {
           .from('kos')
           .select(
             'id, name, address_area, monthly_price, '
-            'description, whatsapp_number, status',
+            'description, whatsapp_number, status, room_count',
           );
       if (maxPrice != null) {
         queryBuilder = queryBuilder.lte('monthly_price', maxPrice);
@@ -78,7 +80,7 @@ class SupabaseKosRepository implements KosRepository, OwnerKosRepository {
         .from('kos')
         .select(
           'id, name, address_area, monthly_price, '
-          'description, whatsapp_number, status',
+          'description, whatsapp_number, status, room_count',
         )
         .or(
           'name.ilike.%$escapedQuery%,'
@@ -100,7 +102,7 @@ class SupabaseKosRepository implements KosRepository, OwnerKosRepository {
         .from('kos')
         .select(
           'id, name, address_area, monthly_price, '
-          'description, whatsapp_number, status',
+          'description, whatsapp_number, status, room_count',
         )
         .eq('id', id)
         .maybeSingle();
@@ -122,7 +124,7 @@ class SupabaseKosRepository implements KosRepository, OwnerKosRepository {
         .from('kos')
         .select(
           'id, owner_id, name, address_area, monthly_price, '
-          'description, whatsapp_number, status, created_at',
+          'description, whatsapp_number, status, room_count, created_at',
         )
         .eq('owner_id', ownerId)
         .order('created_at', ascending: false);
@@ -140,6 +142,7 @@ class SupabaseKosRepository implements KosRepository, OwnerKosRepository {
     required String description,
     required String whatsappNumber,
     required String status,
+    int roomCount = 0,
   }) async {
     final ownerId = client.auth.currentUser?.id;
     if (ownerId == null) {
@@ -156,10 +159,11 @@ class SupabaseKosRepository implements KosRepository, OwnerKosRepository {
           'description': description,
           'whatsapp_number': whatsappNumber,
           'status': status,
+          'room_count': roomCount,
         })
         .select(
           'id, owner_id, name, address_area, monthly_price, '
-          'description, whatsapp_number, status, created_at',
+          'description, whatsapp_number, status, room_count, created_at',
         )
         .single();
 
@@ -175,6 +179,7 @@ class SupabaseKosRepository implements KosRepository, OwnerKosRepository {
     required String description,
     required String whatsappNumber,
     required String status,
+    int roomCount = 0,
   }) async {
     final ownerId = client.auth.currentUser?.id;
     if (ownerId == null) {
@@ -190,12 +195,13 @@ class SupabaseKosRepository implements KosRepository, OwnerKosRepository {
           'description': description,
           'whatsapp_number': whatsappNumber,
           'status': status,
+          'room_count': roomCount,
         })
         .eq('id', id)
         .eq('owner_id', ownerId)
         .select(
           'id, owner_id, name, address_area, monthly_price, '
-          'description, whatsapp_number, status, created_at',
+          'description, whatsapp_number, status, room_count, created_at',
         )
         .maybeSingle();
 

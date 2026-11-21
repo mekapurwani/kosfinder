@@ -193,7 +193,7 @@ class _KosListScreenState extends State<KosListScreen> {
                                 subtitle: Text(
                                   '${kos.addressArea}\n'
                                   'Rp${kos.monthlyPrice.toStringAsFixed(0)} '
-                                  '/ bulan',
+                                  '/ bulan\nJumlah kamar: ${kos.roomCount}',
                                 ),
                                 trailing: StatusBadge(status: kos.status),
                                 onTap: () {

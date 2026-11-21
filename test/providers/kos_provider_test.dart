@@ -511,6 +511,7 @@ class _FakeOwnerKosRepository implements KosRepository, OwnerKosRepository {
     required String description,
     required String whatsappNumber,
     required String status,
+    int roomCount = 0,
   }) async {
     final newKos =
         created ??
@@ -523,6 +524,7 @@ class _FakeOwnerKosRepository implements KosRepository, OwnerKosRepository {
           whatsappNumber: whatsappNumber,
           status: status,
           ownerId: 'owner-1',
+          roomCount: roomCount,
         );
     owned = [newKos, ...owned];
     return newKos;
@@ -537,6 +539,7 @@ class _FakeOwnerKosRepository implements KosRepository, OwnerKosRepository {
     required String description,
     required String whatsappNumber,
     required String status,
+    int roomCount = 0,
   }) async {
     if (updateError != null) {
       throw updateError!;
@@ -550,6 +553,7 @@ class _FakeOwnerKosRepository implements KosRepository, OwnerKosRepository {
       whatsappNumber: whatsappNumber,
       status: status,
       ownerId: 'owner-1',
+      roomCount: roomCount,
     );
     owned = owned.map((kos) => kos.id == id ? updatedKos : kos).toList();
     return updatedKos;

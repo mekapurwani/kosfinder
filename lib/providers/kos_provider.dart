@@ -70,6 +70,7 @@ class KosProvider extends ChangeNotifier {
     required String description,
     required String whatsappNumber,
     required String status,
+    int roomCount = 0,
   }) async {
     _isLoading = true;
     _errorMessage = null;
@@ -83,6 +84,7 @@ class KosProvider extends ChangeNotifier {
         description: description,
         whatsappNumber: whatsappNumber,
         status: status,
+        roomCount: roomCount,
       );
       _ownedKos = [kos, ..._ownedKos];
       await _refreshPublicKos();
@@ -107,6 +109,7 @@ class KosProvider extends ChangeNotifier {
     required String description,
     required String whatsappNumber,
     required String status,
+    int roomCount = 0,
   }) async {
     _isLoading = true;
     _errorMessage = null;
@@ -121,6 +124,7 @@ class KosProvider extends ChangeNotifier {
         description: description,
         whatsappNumber: whatsappNumber,
         status: status,
+        roomCount: roomCount,
       );
       _ownedKos = _ownedKos
           .map((kos) => kos.id == id ? updatedKos : kos)

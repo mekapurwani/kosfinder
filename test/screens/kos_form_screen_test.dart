@@ -14,6 +14,7 @@ class _FakeOwnerKosRepository implements KosRepository, OwnerKosRepository {
   String? lastDescription;
   String? lastWhatsapp;
   String? lastStatus;
+  int? lastRoomCount;
 
   @override
   Future<List<Kos>> fetchKosTerbaru() async => [];
@@ -35,6 +36,7 @@ class _FakeOwnerKosRepository implements KosRepository, OwnerKosRepository {
     required String description,
     required String whatsappNumber,
     required String status,
+    int roomCount = 0,
   }) async {
     lastName = name;
     lastAddress = addressArea;
@@ -42,6 +44,7 @@ class _FakeOwnerKosRepository implements KosRepository, OwnerKosRepository {
     lastDescription = description;
     lastWhatsapp = whatsappNumber;
     lastStatus = status;
+    lastRoomCount = roomCount;
     created = Kos(
       id: 'new',
       name: name,
@@ -51,6 +54,7 @@ class _FakeOwnerKosRepository implements KosRepository, OwnerKosRepository {
       whatsappNumber: whatsappNumber,
       status: status,
       ownerId: 'owner-1',
+      roomCount: roomCount,
     );
     return created!;
   }
@@ -64,6 +68,7 @@ class _FakeOwnerKosRepository implements KosRepository, OwnerKosRepository {
     required String description,
     required String whatsappNumber,
     required String status,
+    int roomCount = 0,
   }) async {
     lastName = name;
     lastAddress = addressArea;
@@ -71,6 +76,7 @@ class _FakeOwnerKosRepository implements KosRepository, OwnerKosRepository {
     lastDescription = description;
     lastWhatsapp = whatsappNumber;
     lastStatus = status;
+    lastRoomCount = roomCount;
     return Kos(
       id: id,
       name: name,
@@ -80,6 +86,7 @@ class _FakeOwnerKosRepository implements KosRepository, OwnerKosRepository {
       whatsappNumber: whatsappNumber,
       status: status,
       ownerId: 'owner-1',
+      roomCount: roomCount,
     );
   }
 
@@ -110,7 +117,9 @@ void main() {
       find.byKey(const Key('kos-whatsapp')),
       '628123456789',
     );
+    await tester.enterText(find.byKey(const Key('kos-room-count')), '3');
 
+    await tester.ensureVisible(find.byKey(const Key('save-kos')));
     await tester.tap(find.byKey(const Key('save-kos')));
     await tester.pumpAndSettle();
 
@@ -132,6 +141,7 @@ void main() {
       ),
     );
 
+    await tester.ensureVisible(find.byKey(const Key('save-kos')));
     await tester.tap(find.byKey(const Key('save-kos')));
     await tester.pump();
 
@@ -165,7 +175,39 @@ void main() {
     expect(find.text('Penuh'), findsOneWidget);
   });
 
-  testWidgets('edit status mengirim Penuh atau Tersedia', (tester) async {
+  testWidgets('jumlah kamar nol mengubah status menjadi Penuh', (tester) async {
+    final repository = _FakeOwnerKosRepository();
+    final provider = KosProvider(repository: repository);
+
+    await tester.pumpWidget(
+      ChangeNotifierProvider.value(
+        value: provider,
+        child: const MaterialApp(home: KosFormScreen()),
+      ),
+    );
+
+    await tester.enterText(find.byKey(const Key('kos-name')), 'Kos Mawar');
+    await tester.enterText(find.byKey(const Key('kos-address')), 'Singaraja');
+    await tester.enterText(find.byKey(const Key('kos-price')), '800000');
+    await tester.enterText(
+      find.byKey(const Key('kos-description')),
+      'Dekat kampus',
+    );
+    await tester.enterText(
+      find.byKey(const Key('kos-whatsapp')),
+      '628123456789',
+    );
+    await tester.enterText(find.byKey(const Key('kos-room-count')), '0');
+
+    await tester.ensureVisible(find.byKey(const Key('save-kos')));
+    await tester.tap(find.byKey(const Key('save-kos')));
+    await tester.pumpAndSettle();
+
+    expect(repository.lastRoomCount, 0);
+    expect(repository.lastStatus, 'Penuh');
+  });
+
+  testWidgets('jumlah kamar mengubah status secara real-time', (tester) async {
     const kos = Kos(
       id: 'owned-1',
       name: 'Kos Mawar',
@@ -186,14 +228,14 @@ void main() {
       ),
     );
 
-    await tester.tap(find.byKey(const Key('kos-status')));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Penuh').last);
-    await tester.pumpAndSettle();
+    await tester.enterText(find.byKey(const Key('kos-room-count')), '0');
+    await tester.pump();
 
-    await tester.tap(find.byKey(const Key('save-kos')));
-    await tester.pumpAndSettle();
+    expect(find.text('Penuh'), findsWidgets);
 
-    expect(repository.lastStatus, 'Penuh');
+    await tester.enterText(find.byKey(const Key('kos-room-count')), '2');
+    await tester.pump();
+
+    expect(find.text('Tersedia'), findsWidgets);
   });
 }
