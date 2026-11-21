@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kosfinder/models/kos.dart';
+import 'package:kosfinder/models/profile.dart';
+import 'package:kosfinder/providers/auth_provider.dart';
 import 'package:kosfinder/providers/kos_provider.dart';
+import 'package:kosfinder/repositories/auth_repository.dart';
 import 'package:kosfinder/repositories/kos_repository.dart';
 import 'package:kosfinder/screens/kos_list_screen.dart';
+import 'package:kosfinder/screens/register_screen.dart';
 import 'package:provider/provider.dart';
 
 class _FakeKosRepository implements KosRepository {
@@ -31,13 +35,41 @@ class _FakeKosRepository implements KosRepository {
   Future<Kos?> fetchKosById(String id) async => null;
 }
 
+class _FakeAuthRepository implements AuthRepository {
+  @override
+  bool get hasActiveSession => false;
+
+  @override
+  Stream<bool> get sessionChanges => const Stream<bool>.empty();
+
+  @override
+  Future<void> restoreSession() async {}
+
+  @override
+  Future<Profile> register({
+    required String name,
+    required String email,
+    required String password,
+    required String role,
+  }) async {
+    return Profile(id: 'fake-user', name: name, role: role);
+  }
+}
+
 void main() {
   Widget buildScreen(List<Kos> kos) {
     final provider = KosProvider(repository: _FakeKosRepository(kos));
+    final authProvider = AuthProvider(repository: _FakeAuthRepository());
 
     return ChangeNotifierProvider.value(
       value: provider,
-      child: const MaterialApp(home: KosListScreen()),
+      child: ChangeNotifierProvider.value(
+        value: authProvider,
+        child: MaterialApp(
+          routes: {'/register': (_) => const RegisterScreen()},
+          home: const KosListScreen(),
+        ),
+      ),
     );
   }
 
@@ -207,5 +239,26 @@ void main() {
     expect(find.text('Kos Mawar Murah'), findsOneWidget);
     expect(find.text('Kos Mawar Mahal'), findsNothing);
     expect(find.text('Kos Melati Murah'), findsNothing);
+  });
+
+  testWidgets('tombol registrasi membuka halaman registrasi', (tester) async {
+    const kos = [
+      Kos(
+        id: '1',
+        name: 'Kos Mawar',
+        addressArea: 'Singaraja',
+        monthlyPrice: 800000,
+      ),
+    ];
+
+    await tester.pumpWidget(buildScreen(kos));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const Key('open-register')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Registrasi'), findsOneWidget);
+    expect(find.byKey(const Key('register-name')), findsOneWidget);
+    expect(find.byKey(const Key('register-role')), findsOneWidget);
   });
 }

@@ -1,11 +1,20 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../models/profile.dart';
+
 abstract class AuthRepository {
   bool get hasActiveSession;
 
   Stream<bool> get sessionChanges;
 
   Future<void> restoreSession();
+
+  Future<Profile> register({
+    required String name,
+    required String email,
+    required String password,
+    required String role,
+  });
 }
 
 class SupabaseAuthRepository implements AuthRepository {
@@ -27,6 +36,29 @@ class SupabaseAuthRepository implements AuthRepository {
   Future<void> restoreSession() async {
     client.auth.currentSession;
   }
+
+  @override
+  Future<Profile> register({
+    required String name,
+    required String email,
+    required String password,
+    required String role,
+  }) async {
+    final response = await client.auth.signUp(
+      email: email,
+      password: password,
+      data: {'name': name, 'role': role},
+    );
+
+    final user = response.user;
+    if (user == null) {
+      throw const AuthException(
+        'Registrasi berhasil dibuat, tetapi konfirmasi email mungkin diperlukan.',
+      );
+    }
+
+    return Profile(id: user.id, name: name, role: role);
+  }
 }
 
 class MissingAuthRepository implements AuthRepository {
@@ -40,4 +72,14 @@ class MissingAuthRepository implements AuthRepository {
 
   @override
   Future<void> restoreSession() async {}
+
+  @override
+  Future<Profile> register({
+    required String name,
+    required String email,
+    required String password,
+    required String role,
+  }) async {
+    throw StateError('Konfigurasi Supabase belum tersedia.');
+  }
 }

@@ -3,9 +3,11 @@ import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'providers/kos_provider.dart';
+import 'providers/auth_provider.dart';
 import 'repositories/auth_repository.dart';
 import 'repositories/kos_repository.dart';
 import 'screens/kos_list_screen.dart';
+import 'screens/register_screen.dart';
 import 'services/supabase_config.dart';
 
 Future<void> main() async {
@@ -40,6 +42,9 @@ class MyApp extends StatelessWidget {
     return MultiProvider(
       providers: [
         Provider<AuthRepository>.value(value: authRepository),
+        ChangeNotifierProvider(
+          create: (_) => AuthProvider(repository: authRepository),
+        ),
         ChangeNotifierProvider.value(value: provider),
       ],
       child: MaterialApp(
@@ -49,6 +54,7 @@ class MyApp extends StatelessWidget {
           colorScheme: ColorScheme.fromSeed(seedColor: Colors.indigo),
           useMaterial3: true,
         ),
+        routes: {'/register': (_) => const RegisterScreen()},
         home: KosListScreen(
           configurationError: config.isConfigured
               ? null

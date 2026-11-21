@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:kosfinder/models/profile.dart';
 import 'package:kosfinder/repositories/auth_repository.dart';
 
 class _FakeAuthRepository implements AuthRepository {
@@ -17,6 +18,16 @@ class _FakeAuthRepository implements AuthRepository {
   @override
   Future<void> restoreSession() async {
     restored = true;
+  }
+
+  @override
+  Future<Profile> register({
+    required String name,
+    required String email,
+    required String password,
+    required String role,
+  }) async {
+    return Profile(id: 'fake-user', name: name, role: role);
   }
 
   void emitSession(bool active) {
@@ -56,5 +67,19 @@ void main() {
 
     await subscription.cancel();
     await repository.close();
+  });
+
+  test('registrasi fake mengembalikan profil beserta role', () async {
+    final repository = _FakeAuthRepository();
+
+    final profile = await repository.register(
+      name: 'Meka',
+      email: 'meka@example.com',
+      password: 'password123',
+      role: 'pemilik_kos',
+    );
+
+    expect(profile.name, 'Meka');
+    expect(profile.role, 'pemilik_kos');
   });
 }

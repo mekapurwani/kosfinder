@@ -55,7 +55,19 @@ class _KosListScreenState extends State<KosListScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('KosFinder')),
+      appBar: AppBar(
+        title: const Text('KosFinder'),
+        actions: [
+          IconButton(
+            key: const Key('open-register'),
+            tooltip: 'Registrasi',
+            onPressed: () {
+              Navigator.of(context).pushNamed('/register');
+            },
+            icon: const Icon(Icons.person_add),
+          ),
+        ],
+      ),
       body: widget.configurationError != null
           ? _MessageView(widget.configurationError!)
           : Column(
