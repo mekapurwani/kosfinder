@@ -48,6 +48,50 @@ class _OwnerKosListScreenState extends State<OwnerKosListScreen> {
     }
   }
 
+  Future<void> _confirmDelete(Kos kos) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) => AlertDialog(
+        key: const Key('delete-kos-dialog'),
+        title: const Text('Hapus Kos'),
+        content: Text('Hapus "${kos.name}" secara permanen?'),
+        actions: [
+          TextButton(
+            key: const Key('cancel-delete-kos'),
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: const Text('Batal'),
+          ),
+          FilledButton(
+            key: const Key('confirm-delete-kos'),
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: const Text('Hapus'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true || !mounted) {
+      return;
+    }
+
+    final provider = context.read<KosProvider>();
+    final success = await provider.deleteKos(kos.id);
+    if (!mounted) {
+      return;
+    }
+
+    if (success) {
+      await provider.loadOwnedKos();
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(provider.errorMessage ?? 'Tidak dapat menghapus kos.'),
+        ),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -113,6 +157,12 @@ class _OwnerKosListScreenState extends State<OwnerKosListScreen> {
                           tooltip: 'Edit Kos',
                           onPressed: () => _openEditForm(kos),
                           icon: const Icon(Icons.edit),
+                        ),
+                        IconButton(
+                          key: Key('delete-kos-${kos.id}'),
+                          tooltip: 'Hapus Kos',
+                          onPressed: () => _confirmDelete(kos),
+                          icon: const Icon(Icons.delete),
                         ),
                       ],
                     ),

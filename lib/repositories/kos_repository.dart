@@ -27,6 +27,7 @@ abstract class OwnerKosRepository {
     required String whatsappNumber,
     required String status,
   });
+  Future<void> deleteKos(String id);
 }
 
 class SupabaseKosRepository implements KosRepository, OwnerKosRepository {
@@ -204,6 +205,27 @@ class SupabaseKosRepository implements KosRepository, OwnerKosRepository {
       );
     }
     return Kos.fromMap(Map<String, dynamic>.from(row));
+  }
+
+  @override
+  Future<void> deleteKos(String id) async {
+    final ownerId = client.auth.currentUser?.id;
+    if (ownerId == null) {
+      throw StateError('Pemilik belum login.');
+    }
+
+    final deletedRows = await client
+        .from('kos')
+        .delete()
+        .eq('id', id)
+        .eq('owner_id', ownerId)
+        .select('id');
+
+    if (deletedRows.isEmpty) {
+      throw StateError(
+        'Kos tidak ditemukan atau bukan milik pemilik yang login.',
+      );
+    }
   }
 }
 

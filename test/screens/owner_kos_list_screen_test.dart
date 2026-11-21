@@ -9,7 +9,7 @@ import 'package:provider/provider.dart';
 class _FakeOwnerKosRepository implements KosRepository, OwnerKosRepository {
   _FakeOwnerKosRepository(this.owned);
 
-  final List<Kos> owned;
+  List<Kos> owned;
 
   @override
   Future<List<Kos>> fetchKosTerbaru() async => owned;
@@ -65,6 +65,11 @@ class _FakeOwnerKosRepository implements KosRepository, OwnerKosRepository {
       status: status,
       ownerId: 'owner-1',
     );
+  }
+
+  @override
+  Future<void> deleteKos(String id) async {
+    owned = owned.where((kos) => kos.id != id).toList();
   }
 }
 
@@ -180,5 +185,63 @@ void main() {
     expect(find.text('Kos Mawar'), findsOneWidget);
     expect(find.text('Singaraja'), findsOneWidget);
     expect(find.text('Penuh'), findsOneWidget);
+  });
+
+  testWidgets('delete batal tidak menghapus kos', (tester) async {
+    const owned = [
+      Kos(
+        id: 'owned-1',
+        name: 'Kos Mawar',
+        addressArea: 'Singaraja',
+        monthlyPrice: 800000,
+        ownerId: 'owner-1',
+      ),
+    ];
+    final provider = KosProvider(repository: _FakeOwnerKosRepository(owned));
+
+    await tester.pumpWidget(
+      ChangeNotifierProvider.value(
+        value: provider,
+        child: const MaterialApp(home: OwnerKosListScreen()),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const Key('delete-kos-owned-1')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('delete-kos-dialog')), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('cancel-delete-kos')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Kos Mawar'), findsOneWidget);
+  });
+
+  testWidgets('konfirmasi delete menghapus kartu kos', (tester) async {
+    const owned = [
+      Kos(
+        id: 'owned-1',
+        name: 'Kos Mawar',
+        addressArea: 'Singaraja',
+        monthlyPrice: 800000,
+        ownerId: 'owner-1',
+      ),
+    ];
+    final provider = KosProvider(repository: _FakeOwnerKosRepository(owned));
+
+    await tester.pumpWidget(
+      ChangeNotifierProvider.value(
+        value: provider,
+        child: const MaterialApp(home: OwnerKosListScreen()),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const Key('delete-kos-owned-1')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('confirm-delete-kos')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Kos Mawar'), findsNothing);
   });
 }

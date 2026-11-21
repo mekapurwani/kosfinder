@@ -228,6 +228,23 @@ void main() {
     expect(provider.ownedKos, [created]);
   });
 
+  test('createKos langsung menambahkan kos ke daftar publik', () async {
+    final provider = KosProvider(repository: _FakeOwnerKosRepository());
+    await provider.loadKos();
+
+    final success = await provider.createKos(
+      name: 'Kos Baru',
+      addressArea: 'Singaraja',
+      monthlyPrice: 800000,
+      description: 'Dekat kampus',
+      whatsappNumber: '628123456789',
+      status: 'Tersedia',
+    );
+
+    expect(success, isTrue);
+    expect(provider.kos.map((kos) => kos.name), contains('Kos Baru'));
+  });
+
   test('updateKos mengubah kos milik pemilik', () async {
     const original = Kos(
       id: 'owned-1',
@@ -254,6 +271,60 @@ void main() {
     expect(success, isTrue);
     expect(provider.ownedKos.single.name, 'Kos Baru');
     expect(provider.ownedKos.single.status, 'Penuh');
+  });
+
+  test('updateKos langsung memperbarui daftar kos publik', () async {
+    const original = Kos(
+      id: 'owned-1',
+      name: 'Kos Lama',
+      addressArea: 'Singaraja',
+      monthlyPrice: 700000,
+      ownerId: 'owner-1',
+    );
+    final provider = KosProvider(
+      repository: _FakeOwnerKosRepository(owned: [original]),
+    );
+    await provider.loadKos();
+
+    final success = await provider.updateKos(
+      id: 'owned-1',
+      name: 'Kos Baru',
+      addressArea: 'Singaraja',
+      monthlyPrice: 800000,
+      description: 'Dekat kampus',
+      whatsappNumber: '628123456789',
+      status: 'Penuh',
+    );
+
+    expect(success, isTrue);
+    expect(provider.kos.single.name, 'Kos Baru');
+    expect(provider.kos.single.status, 'Penuh');
+  });
+
+  test('updateKos tetap menghormati filter harga publik', () async {
+    const original = Kos(
+      id: 'owned-1',
+      name: 'Kos Lama',
+      addressArea: 'Singaraja',
+      monthlyPrice: 700000,
+      ownerId: 'owner-1',
+    );
+    final provider = KosProvider(
+      repository: _FakeOwnerKosRepository(owned: [original]),
+    );
+    await provider.searchKos('kos', maxPrice: 750000);
+
+    await provider.updateKos(
+      id: 'owned-1',
+      name: 'Kos Baru',
+      addressArea: 'Singaraja',
+      monthlyPrice: 900000,
+      description: 'Dekat kampus',
+      whatsappNumber: '628123456789',
+      status: 'Tersedia',
+    );
+
+    expect(provider.kos, isEmpty);
   });
 
   test('updateKos menolak kos milik pemilik lain', () async {
@@ -303,6 +374,66 @@ void main() {
       'Tidak dapat mengubah kos. Periksa koneksi internet.',
     );
   });
+
+  test('deleteKos menghapus kos dari daftar pemilik', () async {
+    const owned = [
+      Kos(
+        id: 'owned-1',
+        name: 'Kos Mawar',
+        addressArea: 'Singaraja',
+        monthlyPrice: 800000,
+        ownerId: 'owner-1',
+      ),
+    ];
+    final repository = _FakeOwnerKosRepository(owned: owned);
+    final provider = KosProvider(repository: repository);
+    await provider.loadOwnedKos();
+
+    final success = await provider.deleteKos('owned-1');
+
+    expect(success, isTrue);
+    expect(repository.lastDeletedId, 'owned-1');
+    expect(provider.ownedKos, isEmpty);
+  });
+
+  test('deleteKos langsung menghapus kos dari daftar publik', () async {
+    const owned = [
+      Kos(
+        id: 'owned-1',
+        name: 'Kos Mawar',
+        addressArea: 'Singaraja',
+        monthlyPrice: 800000,
+        ownerId: 'owner-1',
+      ),
+    ];
+    final provider = KosProvider(
+      repository: _FakeOwnerKosRepository(owned: owned),
+    );
+    await provider.loadKos();
+
+    final success = await provider.deleteKos('owned-1');
+
+    expect(success, isTrue);
+    expect(provider.kos, isEmpty);
+  });
+
+  test('deleteKos menolak kos milik pemilik lain', () async {
+    final provider = KosProvider(
+      repository: _FakeOwnerKosRepository(
+        deleteError: StateError(
+          'Kos tidak ditemukan atau bukan milik pemilik yang login.',
+        ),
+      ),
+    );
+
+    final success = await provider.deleteKos('kos-pemilik-lain');
+
+    expect(success, isFalse);
+    expect(
+      provider.errorMessage,
+      'Anda tidak memiliki akses untuk menghapus kos ini.',
+    );
+  });
 }
 
 class _FakeOwnerKosRepository implements KosRepository, OwnerKosRepository {
@@ -310,18 +441,30 @@ class _FakeOwnerKosRepository implements KosRepository, OwnerKosRepository {
     this.owned = const [],
     this.created,
     this.updateError,
+    this.deleteError,
   });
 
-  final List<Kos> owned;
+  List<Kos> owned;
   final Kos? created;
   final Object? updateError;
+  final Object? deleteError;
+  String? lastDeletedId;
 
   @override
   Future<List<Kos>> fetchKosTerbaru() async => owned;
 
   @override
-  Future<List<Kos>> searchKosTerbaru(String query, {num? maxPrice}) async =>
-      owned;
+  Future<List<Kos>> searchKosTerbaru(String query, {num? maxPrice}) async {
+    final normalizedQuery = query.trim().toLowerCase();
+    return owned.where((item) {
+      final matchesQuery =
+          normalizedQuery.isEmpty ||
+          item.name.toLowerCase().contains(normalizedQuery) ||
+          item.addressArea.toLowerCase().contains(normalizedQuery);
+      final matchesPrice = maxPrice == null || item.monthlyPrice <= maxPrice;
+      return matchesQuery && matchesPrice;
+    }).toList();
+  }
 
   @override
   Future<Kos?> fetchKosById(String id) async => null;
@@ -338,7 +481,8 @@ class _FakeOwnerKosRepository implements KosRepository, OwnerKosRepository {
     required String whatsappNumber,
     required String status,
   }) async {
-    return created ??
+    final newKos =
+        created ??
         Kos(
           id: 'owned-new',
           name: name,
@@ -349,6 +493,8 @@ class _FakeOwnerKosRepository implements KosRepository, OwnerKosRepository {
           status: status,
           ownerId: 'owner-1',
         );
+    owned = [newKos, ...owned];
+    return newKos;
   }
 
   @override
@@ -364,7 +510,7 @@ class _FakeOwnerKosRepository implements KosRepository, OwnerKosRepository {
     if (updateError != null) {
       throw updateError!;
     }
-    return Kos(
+    final updatedKos = Kos(
       id: id,
       name: name,
       addressArea: addressArea,
@@ -374,6 +520,17 @@ class _FakeOwnerKosRepository implements KosRepository, OwnerKosRepository {
       status: status,
       ownerId: 'owner-1',
     );
+    owned = owned.map((kos) => kos.id == id ? updatedKos : kos).toList();
+    return updatedKos;
+  }
+
+  @override
+  Future<void> deleteKos(String id) async {
+    lastDeletedId = id;
+    if (deleteError != null) {
+      throw deleteError!;
+    }
+    owned = owned.where((kos) => kos.id != id).toList();
   }
 }
 

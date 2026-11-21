@@ -82,6 +82,9 @@ class _FakeOwnerKosRepository implements KosRepository, OwnerKosRepository {
       ownerId: 'owner-1',
     );
   }
+
+  @override
+  Future<void> deleteKos(String id) async {}
 }
 
 void main() {

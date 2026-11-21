@@ -11,6 +11,8 @@ class KosProvider extends ChangeNotifier {
   List<Kos> _kos = [];
   Kos? _selectedKos;
   List<Kos> _ownedKos = [];
+  String _searchQuery = '';
+  num? _maxPrice;
   bool _isLoading = false;
   String? _errorMessage;
 
@@ -25,6 +27,23 @@ class KosProvider extends ChangeNotifier {
       return repository as OwnerKosRepository;
     }
     throw StateError('Repository pemilik tidak tersedia.');
+  }
+
+  Future<void> _refreshPublicKos() async {
+    try {
+      _kos = _searchQuery.trim().isEmpty && _maxPrice == null
+          ? await repository.fetchKosTerbaru()
+          : await repository.searchKosTerbaru(
+              _searchQuery,
+              maxPrice: _maxPrice,
+            );
+    } catch (error, stackTrace) {
+      debugPrint('Gagal menyinkronkan daftar kos: $error');
+      debugPrintStack(
+        label: 'Stack trace sinkronisasi daftar kos',
+        stackTrace: stackTrace,
+      );
+    }
   }
 
   Future<void> loadOwnedKos() async {
@@ -66,6 +85,8 @@ class KosProvider extends ChangeNotifier {
         status: status,
       );
       _ownedKos = [kos, ..._ownedKos];
+      await _refreshPublicKos();
+      notifyListeners();
       return true;
     } catch (error, stackTrace) {
       debugPrint('Gagal menambah kos: $error');
@@ -105,6 +126,8 @@ class KosProvider extends ChangeNotifier {
           .map((kos) => kos.id == id ? updatedKos : kos)
           .toList();
       _selectedKos = updatedKos;
+      await _refreshPublicKos();
+      notifyListeners();
       return true;
     } catch (error, stackTrace) {
       debugPrint('Gagal mengubah kos: $error');
@@ -121,7 +144,35 @@ class KosProvider extends ChangeNotifier {
     }
   }
 
+  Future<bool> deleteKos(String id) async {
+    _isLoading = true;
+    _errorMessage = null;
+    notifyListeners();
+
+    try {
+      await _ownerRepository.deleteKos(id);
+      _ownedKos = _ownedKos.where((kos) => kos.id != id).toList();
+      await _refreshPublicKos();
+      notifyListeners();
+      return true;
+    } catch (error, stackTrace) {
+      debugPrint('Gagal menghapus kos: $error');
+      debugPrintStack(label: 'Stack trace hapus kos', stackTrace: stackTrace);
+      if (error is StateError && error.toString().contains('bukan milik')) {
+        _errorMessage = 'Anda tidak memiliki akses untuk menghapus kos ini.';
+      } else {
+        _errorMessage = 'Tidak dapat menghapus kos. Periksa koneksi internet.';
+      }
+      return false;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
   Future<void> loadKos() async {
+    _searchQuery = '';
+    _maxPrice = null;
     _isLoading = true;
     _errorMessage = null;
     notifyListeners();
@@ -143,6 +194,8 @@ class KosProvider extends ChangeNotifier {
   }
 
   Future<void> searchKos(String query, {num? maxPrice}) async {
+    _searchQuery = query;
+    _maxPrice = maxPrice;
     _isLoading = true;
     _errorMessage = null;
     notifyListeners();
